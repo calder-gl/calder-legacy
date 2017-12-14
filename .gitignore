@@ -1,0 +1,5 @@
+# Compiled targets
+target/
+
+# Cached files
+.ensime_cache/
