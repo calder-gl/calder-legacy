@@ -5,7 +5,7 @@
 package calder.expressions
 
 import calder.SyntaxNode
-import calder.Type
+import calder.types.Type
 
 trait Expression extends SyntaxNode {
   def returnType(): Type
