@@ -19,7 +19,7 @@ class Type(private val name: String, private val metakind: MetaKind, private val
       if (children.length != 0) throw new TypeException("Basic kind cannot have any children types.")
     case MetaKind.Array ⇒
       if (children.length != 1) throw new TypeException("Array kind must have exactly one child type.")
-    case default ⇒ None
+    case _ ⇒ None
   }
 
   def getName(): String = name
@@ -30,7 +30,7 @@ class Type(private val name: String, private val metakind: MetaKind, private val
 
   // TODO: implement, or scrap in new Type design
 
-  def checkEquals(otherType: Type): Boolean = true
+  def checkEquals(otherType: String): Boolean = name == otherType
 
   def checkVectorEquals(otherType: Type): Boolean = true
 
@@ -62,4 +62,24 @@ class Type(private val name: String, private val metakind: MetaKind, private val
     }
     */
   }
+
+  // Type Checking Helper Methods
+
+  def isScalarType(): Boolean =
+    name match {
+      case "int" | "float" ⇒ true
+      case _ ⇒ false
+    }
+
+  def isMatrixType(): Boolean =
+    name match {
+      case "mat2" | "mat3" | "mat4" ⇒ true
+      case _ ⇒ false
+    }
+
+  def isVectorType(): Boolean =
+    name match {
+      case "vec2" | "vec3" | "vec4" | "bvec2" | "bvec3" | "bvec4" | "ivec2" | "ivec3" | "ivec4" ⇒ true
+      case _ ⇒ false
+    }
 }
