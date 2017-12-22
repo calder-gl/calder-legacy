@@ -1,0 +1,33 @@
+/**
+ * OtherSpec.scala
+ */
+
+package calder.expressions.other
+
+import org.scalatest._
+
+import calder.Reference
+import calder.expressions._
+import calder.expressions.other._
+import calder.types._
+import calder.variables._
+
+class OtherSpec extends FunSpec {
+  describe ("Other Expressions") {
+    val lhs = new Reference(
+      new InterfaceVariable(Qualifier.In, new VariableSource(Kind.Int.asInstanceOf[Type], "lhs"))
+    )
+    val rhs = new Reference(
+      new InterfaceVariable(Qualifier.In, new VariableSource(Kind.Int.asInstanceOf[Type], "rhs"))
+    )
+
+    describe ("Comma") {
+      describe ("source") {
+        it ("returns a comma separated list") {
+          val operation = new Comma(lhs, rhs)
+          assert(operation.source == "lhs, rhs")
+        }
+      }
+    }
+  }
+}
