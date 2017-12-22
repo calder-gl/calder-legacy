@@ -10,15 +10,15 @@ import calder.types.Type
 import org.scalajs.dom.raw.WebGLRenderingContext
 import org.scalajs.dom.raw.WebGLUniformLocation
 
-class VariableSource(private val srcType: Type, srcName: String) {
-  def getSrcType(): Type = srcType
+class VariableSource(private val _srcType: Type, private val _srcName: String) {
+  def srcType(): Type = _srcType
 
-  def getSrcName(): String = srcName
+  def srcName(): String = _srcName
 
   def declaration(): String =
-    srcType.getMetakind match {
-      case MetaKind.Basic  ⇒ s"${srcType.getName} ${srcName};"
-      case MetaKind.Struct ⇒ s"${srcType.getName} ${srcName};"
-      case MetaKind.Array  ⇒ s"${srcType.getChildren()(0).getName} ${srcName}[];"
+    srcType.metakind match {
+      case MetaKind.Basic  ⇒ s"${_srcType.name} ${_srcName};"
+      case MetaKind.Struct ⇒ s"${_srcType.name} ${_srcName};"
+      case MetaKind.Array  ⇒ s"${_srcType.children()(0).name} ${_srcName}[];"
     }
 }

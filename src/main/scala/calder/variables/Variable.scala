@@ -17,9 +17,9 @@ class Variable(private val variableSrc: VariableSource) {
 
   def declaration(): String = variableSrc.declaration
 
-  def name(): String = variableSrc.getSrcName
+  def name(): String = variableSrc.srcName
 
-  def getType(): Type = variableSrc.getSrcType
+  def getType(): Type = variableSrc.srcType
 
   def wrapAttributeBufferInTypedArray(value: Array[Any]): Any = getType.wrapAttributeBufferInTypedArray(value)
 

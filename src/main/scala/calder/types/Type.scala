@@ -12,25 +12,25 @@ import calder.util.ScalaJSArray
 import org.scalajs.dom.raw.WebGLRenderingContext
 import org.scalajs.dom.raw.WebGLUniformLocation
 
-class Type(private val name: String, private val metakind: MetaKind, private val children: Array[Type]) {
+class Type(private val _name: String, private val _metakind: MetaKind, private val _children: Array[Type]) {
   // Validate children types
-  metakind match {
+  _metakind match {
     case MetaKind.Basic ⇒
-      if (children.length != 0) throw new TypeException("Basic kind cannot have any children types.")
+      if (_children.length != 0) throw new TypeException("Basic kind cannot have any children types.")
     case MetaKind.Array ⇒
-      if (children.length != 1) throw new TypeException("Array kind must have exactly one child type.")
+      if (_children.length != 1) throw new TypeException("Array kind must have exactly one child type.")
     case _ ⇒ None
   }
 
-  def getName(): String = name
+  def name(): String = _name
 
-  def getMetakind(): MetaKind = metakind
+  def metakind(): MetaKind = _metakind
 
-  def getChildren(): Array[Type] = children
+  def children(): Array[Type] = _children
 
   // TODO: implement, or scrap in new Type design
 
-  def checkEquals(otherType: String): Boolean = name == otherType
+  def checkEquals(otherType: String): Boolean = _name == otherType
 
   def checkVectorEquals(otherType: Type): Boolean = true
 
@@ -43,10 +43,10 @@ class Type(private val name: String, private val metakind: MetaKind, private val
   def size(): Any = None
 
   def setUniform[T: ScalaJSArray](gl: WebGLRenderingContext, position: WebGLUniformLocation, value: T): Unit = {
-    if (metakind != MetaKind.Basic) throw new Error("Unsupported attribute type")
+    if (_metakind != MetaKind.Basic) throw new Error("Unsupported attribute type")
 
     /*
-    name match {
+    _name match {
       case Kind.Int   ⇒ gl.uniform1iv(position, value)
       case Kind.IVec2 ⇒ gl.uniform2iv(position, value)
       case Kind.IVec3 ⇒ gl.uniform3iv(position, value)
@@ -66,19 +66,19 @@ class Type(private val name: String, private val metakind: MetaKind, private val
   // Type Checking Helper Methods
 
   def isScalarType(): Boolean =
-    name match {
+    _name match {
       case "int" | "float" ⇒ true
       case _ ⇒ false
     }
 
   def isMatrixType(): Boolean =
-    name match {
+    _name match {
       case "mat2" | "mat3" | "mat4" ⇒ true
       case _ ⇒ false
     }
 
   def isVectorType(): Boolean =
-    name match {
+    _name match {
       case "vec2" | "vec3" | "vec4" | "bvec2" | "bvec3" | "bvec4" | "ivec2" | "ivec3" | "ivec4" ⇒ true
       case _ ⇒ false
     }
