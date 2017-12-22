@@ -44,5 +44,19 @@ class InfixSpec extends FunSpec {
         assert(operation.source == "1 % 1")
       }
     }
+
+    describe ("returnType") {
+      val otherIntType = new Reference(new InterfaceVariable(Qualifier.In, new VariableSource(Kind.Int.asInstanceOf[Type], "1")))
+
+      it ("returns float when one of the variables is of type float") {
+        val operation = new Subtraction(lhs, floatVar)
+        assert(operation.returnType == Kind.Float.asInstanceOf[Type])
+      }
+
+      it ("returns int when both of the variables are of type int") {
+        val operation = new Subtraction(lhs, rhs)
+        assert(operation.returnType == Kind.Int.asInstanceOf[Type])
+      }
+    }
   }
 }

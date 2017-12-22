@@ -1,0 +1,56 @@
+/**
+ * UnarySpec.scala
+ */
+
+package calder.expressions.math.unary
+
+import org.scalatest._
+
+import calder.Reference
+import calder.exceptions.TypeException
+import calder.expressions._
+import calder.expressions.math.unary._
+import calder.types._
+import calder.variables._
+
+class UnarySpec extends FunSpec {
+  describe ("Unary Expressions") {
+    val lhs = new Reference(
+      new InterfaceVariable(Qualifier.In, new VariableSource(Kind.Int.asInstanceOf[Type], "lhs"))
+    )
+
+    describe ("source") {
+      it ("prefix increment") {
+        val operation = new PrefixIncrement(lhs)
+        assert(operation.source == "++lhs")
+      }
+
+      it ("prefix decrement") {
+        val operation = new PrefixDecrement(lhs)
+        assert(operation.source == "--lhs")
+      }
+
+      it ("postfix increment") {
+        val operation = new PostfixIncrement(lhs)
+        assert(operation.source == "lhs++")
+      }
+
+      it ("postfix decrement") {
+        val operation = new PostfixDecrement(lhs)
+        assert(operation.source == "lhs--")
+      }
+    }
+
+    describe ("errors") {
+      val stringVar = new Reference(
+        new InterfaceVariable(Qualifier.In, new VariableSource(Kind.Bool.asInstanceOf[Type], "test"))
+      )
+
+      it ("throws error when type of reference is not integer") {
+        assertThrows[TypeException] {
+          val operation = new PostfixDecrement(lhs)
+        }
+      }
+    }
+  }
+}
