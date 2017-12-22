@@ -4,11 +4,11 @@
 
 package calder.expressions.math.infix
 
-import calder.Reference
+import calder.expressions.Expression
 import calder.exceptions.TypeException
 import calder.expressions.math.infix.InfixExpression
 
-class Modulo(override val lhs: Reference, override val rhs: Reference) extends InfixExpression(lhs, rhs) {
+class Modulo(override val lhs: Expression, override val rhs: Expression) extends InfixExpression(lhs, rhs) {
   if (!super.bothSidesIntType) throw new TypeException("LHS and RHS must be of type Int.")
 
   def source(): String = s"(${lhs.source} % ${rhs.source})"

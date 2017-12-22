@@ -6,7 +6,7 @@ package calder.expressions.math.infix
 
 import org.scalatest._
 
-import calder.Reference
+import calder.expressions.Reference
 import calder.expressions._
 import calder.expressions.math.infix._
 import calder.types._

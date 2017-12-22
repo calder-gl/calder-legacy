@@ -2,7 +2,7 @@
  * Reference.scala
  */
 
-package calder
+package calder.expressions
 
 import calder.expressions.Expression
 import calder.types.Type

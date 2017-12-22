@@ -4,12 +4,11 @@
 
 package calder.expressions.math.infix
 
-import calder.Reference
 import calder.expressions.Expression
 import calder.types.Kind
 import calder.types.Type
 
-abstract class InfixExpression(val lhs: Reference, val rhs: Reference) extends Expression {
+abstract class InfixExpression(val lhs: Expression, val rhs: Expression) extends Expression {
   def source(): String
 
   def returnType(): Type =

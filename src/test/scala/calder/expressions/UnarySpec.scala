@@ -6,7 +6,7 @@ package calder.expressions.math.unary
 
 import org.scalatest._
 
-import calder.Reference
+import calder.expressions.Reference
 import calder.exceptions.TypeException
 import calder.expressions._
 import calder.expressions.math.unary._

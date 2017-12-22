@@ -6,7 +6,7 @@ package calder.expressions.other
 
 import org.scalatest._
 
-import calder.Reference
+import calder.expressions.Reference
 import calder.expressions._
 import calder.expressions.other._
 import calder.types._

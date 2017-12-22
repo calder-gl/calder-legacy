@@ -6,7 +6,7 @@ package calder.expressions.math.unary
 
 import org.scalatest._
 
-import calder.Reference
+import calder.expressions.Reference
 import calder.expressions._
 import calder.expressions.boolean._
 import calder.types._
