@@ -146,11 +146,11 @@ class ShaderPipeline(private val gl: WebGLRenderingContext,
     vertexShader
       .inputDeclarations
       .filter(input ⇒ input.variable.qualifier == Qualifier.Attribute)
-      .map(input => input.variable.name -> input.variable).toMap
+      .map(input ⇒ input.variable.name → input.variable).toMap
 
   private def filterUniformQualifiers(): Map[String, InterfaceVariable] =
     vertexShader
       .inputDeclarations
       .filter(input ⇒ input.variable.qualifier == Qualifier.Uniform)
-      .map(input => input.variable.name -> input.variable).toMap
+      .map(input ⇒ input.variable.name → input.variable).toMap
 }
