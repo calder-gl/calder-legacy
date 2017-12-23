@@ -7,8 +7,6 @@ package calder.types
 import calder.exceptions.TypeException
 import calder.types.Kind._
 import calder.types.MetaKind._
-import calder.util.ScalaJSArray
-
 import org.scalajs.dom.raw.WebGLRenderingContext
 import org.scalajs.dom.raw.WebGLUniformLocation
 
@@ -38,11 +36,11 @@ class Type(private val _name: String, private val _metakind: MetaKind, private v
 
   def wrapAttributeBufferInTypedArray(value: Array[Any]): Any = None
 
-  def glType(gl: WebGLRenderingContext): Any = None
+  def glType(gl: WebGLRenderingContext): Int = 0
 
-  def size(): Any = None
+  def size(): Int = 0
 
-  def setUniform[T: ScalaJSArray](gl: WebGLRenderingContext, position: WebGLUniformLocation, value: T): Unit = {
+  def setUniform(gl: WebGLRenderingContext, position: WebGLUniformLocation, value: Array[Any]): Unit = {
     if (_metakind != MetaKind.Basic) throw new Error("Unsupported attribute type")
 
     /*

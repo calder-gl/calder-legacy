@@ -6,7 +6,6 @@ package calder.variables
 
 import calder.expressions.Expression
 import calder.types.Type
-import calder.util.ScalaJSArray
 import calder.variables.VariableSource
 
 import org.scalajs.dom.raw.WebGLRenderingContext
@@ -23,10 +22,10 @@ class Variable(private val _variableSrc: VariableSource) {
 
   def wrapAttributeBufferInTypedArray(value: Array[Any]): Any = getType.wrapAttributeBufferInTypedArray(value)
 
-  def glType(gl: WebGLRenderingContext): Any = getType.glType(gl)
+  def glType(gl: WebGLRenderingContext): Int = getType.glType(gl)
 
-  def size(): Any = getType.size
+  def size(): Int = getType.size
 
-  def setUniform[T: ScalaJSArray](gl: WebGLRenderingContext, position: WebGLUniformLocation, value: T): Unit =
+  def setUniform(gl: WebGLRenderingContext, position: WebGLUniformLocation, value: Array[Any]): Unit =
     getType.setUniform(gl, position, value)
 }

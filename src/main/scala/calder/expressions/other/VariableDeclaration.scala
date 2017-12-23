@@ -6,10 +6,10 @@ package calder.expressions.other
 
 import calder.expressions.Expression
 import calder.types.Type
-import calder.variables.Variable
+import calder.variables.InterfaceVariable
 
-class VariableDeclaration(private val _variable: Variable) extends Expression {
-  def variable(): Variable = _variable
+class VariableDeclaration(private val _variable: InterfaceVariable) extends Expression {
+  def variable(): InterfaceVariable = _variable
 
   def returnType(): Type = _variable.getType
 
