@@ -1,0 +1,65 @@
+/**
+ * ShaderPipelineBuilderSpec.scala
+ */
+
+package calder.expressions.shaders
+
+import org.scalatest._
+
+import calder.expressions.Reference
+import calder.expressions._
+import calder.expressions.assignment._
+import calder.expressions.constructs._
+import calder.expressions.other._
+import calder.shaders._
+import calder.types._
+import calder.variables._
+
+class ShaderPipelineBuilderSpec extends FunSpec {
+  // References
+  val glPosition = new Reference(
+    new InterfaceVariable(Qualifier.Out, new VariableSource(Kind.Vec4.asInstanceOf[Type], "glPosition"))
+  )
+
+  // Interface variables
+  val ptColour = new InterfaceVariable(Qualifier.Out, new VariableSource(Kind.Vec4.asInstanceOf[Type], "colour"))
+  val outColour = new InterfaceVariable(Qualifier.Out, new VariableSource(Kind.Vec4.asInstanceOf[Type], "colour"))
+  val colour = new InterfaceVariable(Qualifier.In, new VariableSource(Kind.Vec4.asInstanceOf[Type], "colour"))
+  val vertexPosition = new InterfaceVariable(Qualifier.Attribute, new VariableSource(Kind.Vec4.asInstanceOf[Type], "vertexPosition"))
+
+  /** Returns a newly built vertex shader */
+  def vertexShader(): Shader =
+    new Shader(
+      new Function(
+        "main",
+        Array(
+          new Statement(new EqualAssignment(glPosition, new Reference(vertexPosition))),
+          new Statement(new EqualAssignment(new Reference(ptColour), new Reference(vertexPosition)))
+        )
+      ),
+      Array(new VariableDeclaration(ptColour)),
+      Array(new VariableDeclaration(vertexPosition))
+    )
+
+  /** Returns a newly built fragment shader */
+  def fragmentShader(): Shader =
+    new Shader(
+      new Function(
+        "main",
+        Array(
+          new Statement(new EqualAssignment(new Reference(outColour), new Reference(colour)))
+        )
+      ),
+      Array(new VariableDeclaration(outColour)),
+      Array(new VariableDeclaration(colour))
+    )
+
+  describe ("ShaderPipelineBuilder") {
+    describe ("source") {
+      it ("has all fragmentShader outputs in vertex shader inputs") {
+        val pipelineBuilder = new ShaderPipelineBuilder(vertexShader, fragmentShader)
+        assert(pipelineBuilder.isWellFormed == true)
+      }
+    }
+  }
+}

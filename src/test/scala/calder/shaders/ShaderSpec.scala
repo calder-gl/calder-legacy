@@ -18,7 +18,7 @@ import calder.variables._
 class ShaderSpec extends FunSpec {
   def basicShader(): Shader = {
     val glPosition = new Reference(
-      new InterfaceVariable(Qualifier.Out, new VariableSource(Kind.Vec4.asInstanceOf[Type], "a"))
+      new InterfaceVariable(Qualifier.Out, new VariableSource(Kind.Vec4.asInstanceOf[Type], "glPosition"))
     )
     val vertexPosition = new InterfaceVariable(Qualifier.Attribute, new VariableSource(Kind.Vec4.asInstanceOf[Type], "vertexPosition"))
 
@@ -39,7 +39,7 @@ class ShaderSpec extends FunSpec {
           attribute vec4 vertexPosition;
 
           void main() {
-              gl_Position = vertexPosition;
+              glPosition = vertexPosition;
           }
         """
         assert(shader.source == expected)
