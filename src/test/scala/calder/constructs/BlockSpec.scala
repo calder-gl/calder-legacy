@@ -8,7 +8,7 @@ import org.scalatest._
 
 import calder.expressions.Reference
 import calder.expressions._
-import calder.expressions.assignment._
+import calder.expressions.constructs._
 import calder.types._
 import calder.variables._
 
