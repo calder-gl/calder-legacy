@@ -15,10 +15,10 @@ import calder.variables._
 
 class FunctionSpec extends FunSpec {
   val glPosition = new Reference(
-    new InterfaceVariable(Qualifier.In, new VariableSource(Kind.Vec4.asInstanceOf[Type], "glPosition"))
+    new InterfaceVariable(Qualifier.Out, new VariableSource(Kind.Vec4.asInstanceOf[Type], "glPosition"))
   )
   val vertexPosition = new Reference(
-    new InterfaceVariable(Qualifier.In, new VariableSource(Kind.Vec4.asInstanceOf[Type], "vertexPosition"))
+    new InterfaceVariable(Qualifier.Attribute, new VariableSource(Kind.Vec4.asInstanceOf[Type], "vertexPosition"))
   )
   val integerVar = new Reference(
     new InterfaceVariable(Qualifier.In, new VariableSource(Kind.Int.asInstanceOf[Type], "intVar"))
