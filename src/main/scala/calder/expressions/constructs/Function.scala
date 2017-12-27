@@ -9,8 +9,9 @@ import calder.expressions.constructs.Statement
 import calder.types.Kind
 import calder.types.Type
 
-class Function(private val _name: String, private val _returnType: Type = Kind.Void.asInstanceOf[Type],
-               private val statements: Array[Statement] = Array()) extends Expression {
+class Function(private val _name: String,
+               private val statements: Array[Statement] = Array(),
+               private val _returnType: Type = Kind.Void.asInstanceOf[Type]) extends Expression {
   def name(): String = _name
 
   def returnType(): Type = _returnType
