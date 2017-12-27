@@ -16,10 +16,12 @@ class DeclareStructSpec extends FunSpec {
   val a = new VariableSource(Kind.Bool.asInstanceOf[Type], "lhs")
   val b = new VariableSource(Kind.Bool.asInstanceOf[Type], "rhs")
 
-  describe ("source") {
-    it ("is well formed") {
-      val structDeclaration = new DeclareStruct("structName", Array(a, b))
-      assert(structDeclaration.source == "struct structName { bool a; bool b; }")
+  describe ("DeclareStruct") {
+    describe ("source") {
+      it ("is well formed") {
+        val structDeclaration = new DeclareStruct("structName", Array(a, b))
+        assert(structDeclaration.source == "struct structName { bool a; bool b; }")
+      }
     }
   }
 }

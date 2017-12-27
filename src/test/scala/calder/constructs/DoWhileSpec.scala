@@ -1,0 +1,32 @@
+/**
+ * DoWhileSpec.scala
+ */
+
+package calder.expressions.constructs
+
+import org.scalatest._
+
+import calder.expressions.Reference
+import calder.expressions._
+import calder.expressions.assignment._
+import calder.expressions.constructs._
+import calder.types._
+import calder.variables._
+
+class DoWhileSpec extends FunSpec {
+  val a = new Reference(
+    new InterfaceVariable(Qualifier.In, new VariableSource(Kind.Int.asInstanceOf[Type], "lhs"))
+  )
+  val b = new Reference(
+    new InterfaceVariable(Qualifier.In, new VariableSource(Kind.Int.asInstanceOf[Type], "rhs"))
+  )
+
+  describe ("DoWhile") {
+    describe ("source") {
+      it ("is well formed") {
+        val doWhile = new DoWhile(a, new Block(Array(new Statement(new EqualAssignment(a, b)))))
+        assert(doWhile.source == "do { a=b; } while (a)")
+      }
+    }
+  }
+}
