@@ -10,20 +10,72 @@ sub classify(Str $rule-name) {
 class RuleGenerator {
   has Str $.name;
   has @.formulations;
+  has Set $.tokens;
 
   method make-class-def {
     "class {classify($.name)} private (_source: String)";
   }
 
+  method necessary-params(@formulation) {
+    # It isn't necessary to specify a param if it can be inferred by the other params.
+    #
+    # e.g. here, EQUAL is not necessary:
+    #
+    #   layout_qualifier_id
+    #     IDENTIFIER
+    #     IDENTIFIER EQUAL INTCONSTANT
+    #     IDENTIFIER EQUAL UINTCONSTANT
+    #
+    # e.g. here, PLUS and DASH are necessary:
+    #
+    #   additive_expression
+    #     multiplicative_expression
+    #     additive_expression PLUS multiplicative_expression
+    #     additive_expression DASH multiplicative_expression
+
+    my @others = @.formulations.grep(* !~~ @formulation);
+
+    Set.new(@formulation.grep(-> $p {
+      if (@formulation.elems == 1) {
+        True;
+      } elsif ($p (elem) $.tokens) {
+        my @removed = @formulation.grep(* ne $p);
+        my @with-same-length = @others.grep(*.elems == @formulation.elems);
+        my @with-same-length-removed = @with-same-length.map(*.grep({$_ ne $p}));
+        my @others-removed = @others.map(*.grep({$_ ne $p}));
+
+        # Start with all the rules of the same length. If you remove this param from all
+        # of them, and it was present in all of them, then it was not necessary, as long
+        # as removal did not produce any duplicate rules
+        !(@removed.elems == @with-same-length-removed.map(*.elems).all) &&
+            @removed !~~ @others-removed.any;
+      } else {
+        True;
+      }
+    }).list);
+  }
+
   method make-signature(@formulation) {
-    my @param-defs = @formulation.map(-> $p { "{$p}: {classify($p)}" });
+    my $necessary = self.necessary-params(@formulation);
+    my @param-defs = @formulation.map(-> $p {
+      if $p (elem) $necessary {
+        "{$p}: {classify($p)}";
+      } else {
+        Nil;
+      }
+    }).grep(*.defined);
 
     "def this({@param-defs.join(', ')})";
   }
 
   method make-body(@formulation) {
-    my @formulation-strs = @formulation.map(-> $r {
-      '${' ~ $r ~ '.source()}'
+    my $necessary = self.necessary-params(@formulation);
+    my @formulation-strs = @formulation.map(-> $p {
+      if $p (elem) $necessary {
+        '${' ~ $p ~ '.source()}';
+      } else {
+        '${' ~ classify($p) ~ '().source()}';
+      }
     });
     'this(s"' ~ @formulation-strs.join("") ~ '")';
   }
@@ -37,7 +89,7 @@ class RuleGenerator {
       @.formulations
         .map( -> $f { '  ' ~ self.make-signature($f) ~ ' = ' ~ self.make-body($f) } )
         .join("\n") ~
-      self.source-getter ~
+      "\n  " ~ self.source-getter ~
       "\n\}";
   }
 }
@@ -81,6 +133,8 @@ grammar GrammarFile {
 }
 
 class GrammarActions {
+  has Set $.tokens;
+
   method TOP($/) {
     $/.make($<node>.map(*.made).grep(*.defined));
   }
@@ -91,13 +145,14 @@ class GrammarActions {
 
   method node:sym<rule>($/) {
     $/.make(RuleGenerator.new(
-      name => $<rule-name>.Str,
-      formulations => ($<formulation> || []).map(*.made)
-    ));
+        name => $<rule-name>.Str,
+        formulations => ($<formulation> || []).map(*.made),
+        tokens => $.tokens
+      ));
   }
 
   method formulation($/) {
-    $/.make($<rule-name>.map(*.Str));
+    $/.make($<rule-name>.map(*.Str).grep(* ne 'EMPTY'));
   }
 }
 
@@ -107,6 +162,9 @@ class GrammarActions {
 sub MAIN(Str :$grammar-file, Str :$tokens-file, Str :$output-dir) {
   my $contents = $grammar-file.IO.slurp;
   my %tokens = from-json($tokens-file.IO.slurp);
-  my @rules = GrammarFile.parse($contents, actions => GrammarActions.new).made;
+  my @rules = GrammarFile.parse(
+      $contents,
+      actions => GrammarActions.new(
+          tokens => Set.new(%tokens.keys))).made;
   say @rules.map(*.source).join("\n\n");
 }
