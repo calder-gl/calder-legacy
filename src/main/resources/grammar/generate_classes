@@ -1,0 +1,112 @@
+#!/usr/bin/env perl6
+
+use v6;
+use JSON::Tiny;
+
+sub classify(Str $rule-name) {
+  $rule-name.split("_").map(*.lc.tc).join("");
+}
+
+class RuleGenerator {
+  has Str $.name;
+  has @.formulations;
+
+  method make-class-def {
+    "class {classify($.name)} private (_source: String)";
+  }
+
+  method make-signature(@formulation) {
+    my @param-defs = @formulation.map(-> $p { "{$p}: {classify($p)}" });
+
+    "def this({@param-defs.join(', ')})";
+  }
+
+  method make-body(@formulation) {
+    my @formulation-strs = @formulation.map(-> $r {
+      '${' ~ $r ~ '.source()}'
+    });
+    'this(s"' ~ @formulation-strs.join("") ~ '")';
+  }
+
+  method source-getter {
+    'def source() = _source';
+  }
+
+  method source() {
+    return self.make-class-def ~ "\{\n" ~
+      @.formulations
+        .map( -> $f { '  ' ~ self.make-signature($f) ~ ' = ' ~ self.make-body($f) } )
+        .join("\n") ~
+      self.source-getter ~
+      "\n\}";
+  }
+}
+
+class TokenGenerator {
+  has Str $.name;
+  has Str $.source;
+
+  method source() {
+    return q:to/SOURCE/;
+      class ${classify($.name)} {
+        def source() = "${$.source}"
+      }
+      SOURCE
+  }
+}
+
+grammar GrammarFile {
+  token TOP {
+    ^ <node>* $
+  }
+
+  proto token node { * }
+
+  token node:sym<comment> {
+    '//' <-[\n]>+ \n
+  }
+
+  token node:sym<rule> {
+    <rule-name> ':' \n
+    <formulation>+
+  }
+
+  token formulation {
+    \s* [ <rule-name>+ % ' '+ ] \n
+  }
+
+  token rule-name {
+    \w+
+  }
+}
+
+class GrammarActions {
+  method TOP($/) {
+    $/.make($<node>.map(*.made).grep(*.defined));
+  }
+
+  method node:sym<comment>($/) {
+    $/.make(Nil);
+  }
+
+  method node:sym<rule>($/) {
+    $/.make(RuleGenerator.new(
+      name => $<rule-name>.Str,
+      formulations => ($<formulation> || []).map(*.made)
+    ));
+  }
+
+  method formulation($/) {
+    $/.make($<rule-name>.map(*.Str));
+  }
+}
+
+# todo: handle IDENTIFIER, TYPE_NAME, (FLOAT|INT|UINT|BOOL)CONSTANT, FIELD_SELECTION
+
+#| Creates codegen classes from the GLES 3.0 grammar.
+sub MAIN(Str :$grammar-file, Str :$tokens-file, Str :$output-dir) {
+  my $contents = $grammar-file.IO.slurp;
+  my %tokens = from-json($tokens-file.IO.slurp);
+  my @rules = GrammarFile.parse($contents, actions => GrammarActions.new).made;
+  say @rules.map(*.source).join("\n\n");
+}
