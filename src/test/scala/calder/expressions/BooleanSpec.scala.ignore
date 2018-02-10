@@ -12,6 +12,7 @@ import calder.expressions.boolean._
 import calder.types._
 import calder.variables._
 
+@Ignore
 class BooleanSpec extends FunSpec {
   describe ("Unary Expressions") {
     val lhs = new Reference(

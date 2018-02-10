@@ -13,6 +13,7 @@ import calder.expressions.constructs._
 import calder.types._
 import calder.variables._
 
+@Ignore
 class FunctionSpec extends FunSpec {
   // References
   val glPosition = new Reference(

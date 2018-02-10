@@ -15,6 +15,7 @@ import calder.shaders._
 import calder.types._
 import calder.variables._
 
+@Ignore
 class ShaderSpec extends FunSpec {
   def basicShader(): Shader = {
     val glPosition = new Reference(

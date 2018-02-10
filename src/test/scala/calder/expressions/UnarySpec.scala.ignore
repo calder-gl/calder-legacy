@@ -13,6 +13,7 @@ import calder.expressions.math.unary._
 import calder.types._
 import calder.variables._
 
+@Ignore
 class UnarySpec extends FunSpec {
   describe ("Unary Expressions") {
     val lhs = new Reference(

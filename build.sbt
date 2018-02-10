@@ -8,4 +8,4 @@ libraryDependencies += "org.scala-js"  %%% "scalajs-dom" % "0.9.1"
 libraryDependencies += "org.scalatest" %%% "scalatest"   % "3.0.0" % "test"
 
 //scalaJSStage in Global := FastOptStage
-scalaJSUseMainModuleInitializer := true
+//scalaJSUseMainModuleInitializer := true

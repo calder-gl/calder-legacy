@@ -12,6 +12,7 @@ import calder.expressions.assignment._
 import calder.types._
 import calder.variables._
 
+@Ignore
 class AssignmentSpec extends FunSpec {
   describe ("Unary Expressions") {
     val lhs = new Reference(

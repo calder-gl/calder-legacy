@@ -12,6 +12,7 @@ import calder.expressions.other._
 import calder.types._
 import calder.variables._
 
+@Ignore
 class OtherSpec extends FunSpec {
   describe ("Other Expressions") {
     val lhs = new Reference(

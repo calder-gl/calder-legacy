@@ -12,6 +12,7 @@ import calder.expressions.constructs._
 import calder.types._
 import calder.variables._
 
+@Ignore
 class DeclareStructSpec extends FunSpec {
   val a = new VariableSource(Kind.Bool.asInstanceOf[Type], "lhs")
   val b = new VariableSource(Kind.Bool.asInstanceOf[Type], "rhs")

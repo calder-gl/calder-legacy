@@ -12,6 +12,7 @@ import calder.expressions.constructs._
 import calder.types._
 import calder.variables._
 
+@Ignore
 class BlockSpec extends FunSpec {
   val a = new Reference(
     new InterfaceVariable(Qualifier.In, new VariableSource(Kind.Int.asInstanceOf[Type], "lhs"))

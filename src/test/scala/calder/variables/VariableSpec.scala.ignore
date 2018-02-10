@@ -10,6 +10,7 @@ import calder.expressions._
 import calder.types._
 import calder.variables._
 
+@Ignore
 class VariableSpec extends FunSpec {
   describe ("Variable") {
     describe ("declaration") {

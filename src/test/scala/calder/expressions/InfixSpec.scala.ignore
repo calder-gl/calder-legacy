@@ -12,6 +12,7 @@ import calder.expressions.math.infix._
 import calder.types._
 import calder.variables._
 
+@Ignore
 class InfixSpec extends FunSpec {
   describe ("Infix Expressions") {
     val lhs = new Reference(new InterfaceVariable(Qualifier.In, new VariableSource(Kind.Int.asInstanceOf[Type], "1")))

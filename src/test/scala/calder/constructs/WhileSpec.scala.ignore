@@ -1,5 +1,5 @@
 /**
- * DoWhileSpec.scala
+ * WhileSpec.scala
  */
 
 package calder.expressions.constructs
@@ -13,7 +13,8 @@ import calder.expressions.constructs._
 import calder.types._
 import calder.variables._
 
-class DoWhileSpec extends FunSpec {
+@Ignore
+class WhileSpec extends FunSpec {
   val a = new Reference(
     new InterfaceVariable(Qualifier.In, new VariableSource(Kind.Int.asInstanceOf[Type], "a"))
   )
@@ -21,11 +22,11 @@ class DoWhileSpec extends FunSpec {
     new InterfaceVariable(Qualifier.In, new VariableSource(Kind.Int.asInstanceOf[Type], "b"))
   )
 
-  describe ("DoWhile") {
+  describe ("While") {
     describe ("source") {
       it ("is well formed") {
-        val doWhile = new DoWhile(a, new Block(Array(new Statement(new EqualAssignment(a, b)))))
-        assert(doWhile.source == "do { a=b; } while (a)")
+        val whileStatement = new While(a, new Block(Array(new Statement(new EqualAssignment(a, b)))))
+        assert(whileStatement.source == "while (a) { a=b; }")
       }
     }
   }

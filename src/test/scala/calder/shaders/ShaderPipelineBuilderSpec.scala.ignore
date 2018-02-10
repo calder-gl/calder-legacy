@@ -15,6 +15,7 @@ import calder.shaders._
 import calder.types._
 import calder.variables._
 
+@Ignore
 class ShaderPipelineBuilderSpec extends FunSpec {
   // References
   val glPosition = new Reference(

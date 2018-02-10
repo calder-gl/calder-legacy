@@ -13,6 +13,7 @@ import calder.expressions.constructs._
 import calder.types._
 import calder.variables._
 
+@Ignore
 class IfSpec extends FunSpec {
   val a = new Reference(
     new InterfaceVariable(Qualifier.In, new VariableSource(Kind.Bool.asInstanceOf[Type], "a"))
