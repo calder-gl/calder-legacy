@@ -3,8 +3,23 @@
 use v6;
 use JSON::Tiny;
 
+my $literal = Set.new([
+  'TYPE_NAME',
+  'IDENTIFIER',
+  'FLOATCONSTANT',
+  'INTCONSTANT',
+  'UINTCONSTANT',
+  'BOOLCONSTANT',
+  'FIELD_SELECTION'
+]);
+
 sub classify(Str $rule-name) {
-  $rule-name.split("_").map(*.lc.tc).join("");
+  if $rule-name (elem) $literal {
+    # Pass in a string literal to use directly in the code
+    'String';
+  } else {
+    $rule-name.split("_").map(*.lc.tc).join("");
+  }
 }
 
 class RuleGenerator {
@@ -72,7 +87,11 @@ class RuleGenerator {
     my $necessary = self.necessary-params(@formulation);
     my @formulation-strs = @formulation.map(-> $p {
       if $p (elem) $necessary {
-        '${' ~ $p ~ '.source()}';
+        if $p (elem) $literal {
+          '${' ~ $p ~ '}';
+        } else {
+          '${' ~ $p ~ '.source()}';
+        }
       } else {
         '${' ~ classify($p) ~ '().source()}';
       }
@@ -155,8 +174,6 @@ class GrammarActions {
     $/.make($<rule-name>.map(*.Str).grep(* ne 'EMPTY'));
   }
 }
-
-# todo: handle IDENTIFIER, TYPE_NAME, (FLOAT|INT|UINT|BOOL)CONSTANT, FIELD_SELECTION
 
 #| Creates codegen classes from the GLES 3.0 grammar.
 sub MAIN(Str :$grammar-file, Str :$tokens-file, Str :$output-dir) {
