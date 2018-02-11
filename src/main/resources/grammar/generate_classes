@@ -225,7 +225,7 @@ sub MAIN(Str :$grammar-file, Str :$tokens-file, Str :$output-file) {
       $contents,
       actions => GrammarActions.new(tokens => %tokens)).made;
 
-  $fh.say: "// DO NOT MODIFY: these classis are automatically generated!\n";
+  $fh.say: "// DO NOT MODIFY: these classes are automatically generated!\n";
 
   $fh.say: "\npackage calder.generate";
 
