@@ -211,7 +211,9 @@ sub MAIN(Str :$grammar-file, Str :$tokens-file, Str :$output-file) {
 
   $fh.say: "// DO NOT MODIFY: these classis are automatically generated!\n";
 
-  $fh.say: "// Tokens\n";
+  $fh.say: "\npackage calder.generate";
+
+  $fh.say: "\n// Tokens\n";
   $fh.say: %tokens.keys.map(-> $name {
     TokenGenerator.new(name => $name).source()
   }).join("\n\n");

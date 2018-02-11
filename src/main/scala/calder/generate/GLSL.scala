@@ -1,5 +1,8 @@
 // DO NOT MODIFY: these classis are automatically generated!
 
+
+package calder.generate
+
 // Tokens
 
 class RightParen
