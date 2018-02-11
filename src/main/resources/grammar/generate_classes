@@ -14,9 +14,9 @@ my @literals = [
   'FIELD_SELECTION'
 ];
 
-# Delimeter regex to a token name into components to then turn into a class or param name
-my $delimeter = /
-  '_' | # Underscore-delimeted
+# delimiter regex to a token name into components to then turn into a class or param name
+my $delimiter = /
+  '_' | # Underscore-delimited
   <?before 'ARRAY'> | # Heuristic: split around 'array' e.g. 'SAMPLERARRAY'
   <?before 'SAMPLER'> | # Heuristic: split before 'sampler' e.g. 'ISAMPLER'
   <?after \d> <?before 'D'> # Heuristic: split dimensions to get a capital D e.g. '2D'
@@ -24,7 +24,7 @@ my $delimeter = /
 
 # Convert a rule name to a Scala class name
 sub classify(Str $rule-name) {
-  $rule-name.split($delimeter).map(*.lc.tc).join("");
+  $rule-name.split($delimiter).map(*.lc.tc).join("");
 }
 
 # Convert a rule name into a Scala parameter name
@@ -33,7 +33,7 @@ sub paramify(Str $rule-name) {
   # with builtin keywords (e.g. RETURN vs return)
   return $rule-name if $rule-name ~~ /^^ <[A..Z_\d]>+ $$/;
 
-  $rule-name.split($delimeter).pairs.map(-> $pair {
+  $rule-name.split($delimiter).pairs.map(-> $pair {
     if $pair.key == 0 {
       $pair.value.lc;
     } else {
