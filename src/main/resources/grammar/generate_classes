@@ -43,8 +43,7 @@ sub paramify(Str $rule-name) {
 }
 
 
-# Generator classes to build Scala classes out of grammar rules
-
+# Generator to build Scala classes out of grammar rules
 class RuleGenerator {
   has Str $.name;
   has @.formulations;
@@ -147,6 +146,7 @@ class RuleGenerator {
   }
 }
 
+# Generator to build Scala classes out of grammar tokens
 class TokenGenerator {
   has Str $.name;
 
@@ -157,6 +157,7 @@ class TokenGenerator {
   }
 }
 
+# Generator to build Scala classes out of grammar literals
 class LiteralGenerator {
   has Str $.name;
 
@@ -172,8 +173,7 @@ class LiteralGenerator {
 
 
 
-# Classes to parse the grammar text file and create Generator classes
-
+# Parser for the grammar text file
 grammar GrammarFile {
   token TOP {
     ^ <node>* $
@@ -199,6 +199,7 @@ grammar GrammarFile {
   }
 }
 
+# Class to convert a grammar match to Scala class generators
 class GrammarActions {
   has %.tokens;
 
@@ -222,10 +223,10 @@ class GrammarActions {
   }
 }
 
-
+subset File of Str where {$_.IO ~~ :e};
 
 #| Creates codegen classes from the GLES 3.0 grammar.
-sub MAIN(Str :$grammar-file, Str :$tokens-file, Str :$output-file) {
+multi sub MAIN(File :$grammar-file!, File :$tokens-file!, Str :$output-file!) {
   my $contents = $grammar-file.IO.slurp;
   my %tokens = from-json($tokens-file.IO.slurp);
   my $fh = open $output-file, :w;
@@ -251,4 +252,12 @@ sub MAIN(Str :$grammar-file, Str :$tokens-file, Str :$output-file) {
   $fh.say: @rules.map(*.source).join("\n\n");
 
   $fh.close;
+}
+
+multi sub MAIN(Str :$grammar-file!, File :$tokens-file!, Str :$output-file!) is hidden-from-USAGE {
+  say "Could not find the grammar file!";
+}
+
+multi sub MAIN(Str :$grammar-file!, Str :$tokens-file!, Str :$output-file!) is hidden-from-USAGE {
+  say "Could not find the tokens file!";
 }
