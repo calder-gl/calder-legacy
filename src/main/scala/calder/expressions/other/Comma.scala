@@ -1,7 +1,6 @@
 /**
  * PrefixDecrement.scala
  */
-
 package calder.expressions.other
 
 import calder.expressions.Reference

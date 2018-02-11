@@ -1,7 +1,6 @@
 /**
  * Variable.scala
  */
-
 package calder.variables
 
 import calder.expressions.Expression
@@ -20,7 +19,8 @@ class Variable(private val _variableSrc: VariableSource) {
 
   def getType(): Type = _variableSrc.srcType
 
-  def wrapAttributeBufferInTypedArray(value: Array[Any]): Any = getType.wrapAttributeBufferInTypedArray(value)
+  def wrapAttributeBufferInTypedArray(value: Array[Any]): Any =
+    getType.wrapAttributeBufferInTypedArray(value)
 
   def glType(gl: WebGLRenderingContext): Int = getType.glType(gl)
 

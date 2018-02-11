@@ -1,7 +1,6 @@
 /**
  * UnaryExpression.scala
  */
-
 package calder.expressions.math.unary
 
 import calder.exceptions.TypeException
@@ -11,7 +10,8 @@ import calder.types.Kind
 import calder.types.Type
 
 abstract class UnaryExpression(val lhs: Reference) extends Expression {
-  if (!lhs.returnType.checkEquals("int")) throw new TypeException("Can only perform unary expression on integer type.")
+  if (!lhs.returnType.checkEquals("int"))
+    throw new TypeException("Can only perform unary expression on integer type.")
 
   def source(): String
 

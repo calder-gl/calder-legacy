@@ -1,7 +1,6 @@
 /**
  * AssignmentExpression.scala
  */
-
 package calder.expressions.assignment
 
 import calder.expressions.Expression

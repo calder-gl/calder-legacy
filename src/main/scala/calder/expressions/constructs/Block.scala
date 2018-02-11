@@ -1,7 +1,6 @@
 /**
  * Block.scala
  */
-
 package calder.expressions.constructs
 
 import calder.expressions.Expression
@@ -14,5 +13,6 @@ class Block(private val statements: Array[Statement] = Array()) extends Expressi
 
   def returnType(): Type = Kind.Void.asInstanceOf[Type]
 
-  def source(): String = "{" + statements.map(statement ⇒ statement.source).mkString("\n") + "}"
+  def source(): String =
+    "{" + statements.map(statement => statement.source).mkString("\n") + "}"
 }

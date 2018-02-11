@@ -1,7 +1,6 @@
 /**
  * SyntaxNode.scala
  */
-
 package calder
 
 trait SyntaxNode {

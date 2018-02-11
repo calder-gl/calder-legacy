@@ -1,0 +1,43 @@
+#!/bin/sh
+
+_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+DIR=$( echo $_DIR | sed 's/\/.git\/hooks$//' )
+
+echo "Running pre-commit hook ... (you may skip with the `--no-verify` flag)\n"
+git diff --quiet
+
+# Checks to see if the Scala code can compile
+echo "==> Compiling staged changes"
+cd $DIR
+sbt test:compile > /dev/null
+compiles=$?
+
+echo "==> Compiles?"
+
+if [ $compiles -eq 0 ]
+then
+  echo "... YES"
+else
+  echo "... ERROR"
+fi
+
+# Checks to see if the Scala code can be formatted
+echo "==> Formatting staged changes"
+cd $DIR
+./util/format > /dev/null
+formatted=$?
+
+if [ $compiles -eq 0 ] && [ $formatted -eq 0 ]
+then
+  echo "... done. Proceeding with commit."
+  exit 0
+elif [ $compiles -eq 0 ]
+then
+  echo "... done."
+  echo "CANCELLING commit due to NON-FORMATTED CODE."
+  exit 1
+else
+  echo "... done."
+  echo "CANCELLING commit due to COMPILE ERROR."
+  exit 2
+fi

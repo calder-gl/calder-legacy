@@ -1,7 +1,6 @@
 /**
  * ShaderPipelineBuilder.scala
  */
-
 package calder.shaders
 
 import calder.shaders.Shader
@@ -15,8 +14,8 @@ class ShaderPipelineBuilder(private val vertexShader: Shader, private val fragme
   private val outputVariables: Set[VariableSource] = vertexShader.outputs
 
   /** Public Interface */
-
   val isWellFormed: Boolean = inputVariables.subsetOf(outputVariables)
 
-  def build(gl: WebGLRenderingContext): ShaderPipeline = new ShaderPipeline(gl, vertexShader, fragmentShader)
+  def build(gl: WebGLRenderingContext): ShaderPipeline =
+    new ShaderPipeline(gl, vertexShader, fragmentShader)
 }

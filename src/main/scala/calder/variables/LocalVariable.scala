@@ -1,7 +1,6 @@
 /**
  * LocalVariable.scala
  */
-
 package calder.variables
 
 import calder.variables.Variable

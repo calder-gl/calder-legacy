@@ -1,7 +1,6 @@
 /**
  * Addition.scala
  */
-
 package calder.expressions.math.infix
 
 import calder.expressions.Expression
