@@ -167,8 +167,7 @@ single_declaration:
 // Grammar Note: No 'enum', or 'typedef'.
 fully_specified_type:
   type_specifier
-  type_qualifier
-  type_specifier
+  type_qualifier type_specifier
 invariant_qualifier:
   INVARIANT
 interpolation_qualifier:

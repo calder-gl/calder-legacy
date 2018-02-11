@@ -3,7 +3,7 @@
 use v6;
 use JSON::Tiny;
 
-my $literal = Set.new([
+my @literals = [
   'TYPE_NAME',
   'IDENTIFIER',
   'FLOATCONSTANT',
@@ -11,27 +11,37 @@ my $literal = Set.new([
   'UINTCONSTANT',
   'BOOLCONSTANT',
   'FIELD_SELECTION'
-]);
+];
 
 sub classify(Str $rule-name) {
-  if $rule-name (elem) $literal {
-    # Pass in a string literal to use directly in the code
-    'String';
-  } else {
-    $rule-name.split("_").map(*.lc.tc).join("");
-  }
+  $rule-name.split("_").map(*.lc.tc).join("");
+}
+
+sub paramify(Str $rule-name) {
+  return $rule-name if $rule-name ~~ /^^ <[A..Z_\d]>+ $$/;
+
+  $rule-name.split("_").pairs.map(-> $pair {
+    if $pair.key == 0 {
+      $pair.value.lc;
+    } else {
+      $pair.value.lc.tc;
+    }
+  }).join("");
 }
 
 class RuleGenerator {
   has Str $.name;
   has @.formulations;
-  has Set $.tokens;
+  has %.tokens;
+  has Set $.implied;
 
-  method make-class-def {
-    "class {classify($.name)} private (_source: String)";
-  }
+  submethod BUILD(Str :$name, :@formulations, :%tokens) {
+    $!name = $name;
+    @!formulations = @formulations.map(*.Array);
+    %!tokens = %tokens;
+    $!implied = Set.new;
 
-  method necessary-params(@formulation) {
+
     # It isn't necessary to specify a param if it can be inferred by the other params.
     #
     # e.g. here, EQUAL is not necessary:
@@ -48,35 +58,44 @@ class RuleGenerator {
     #     additive_expression PLUS multiplicative_expression
     #     additive_expression DASH multiplicative_expression
 
-    my @others = @.formulations.grep(* !~~ @formulation);
+    my @formulations-removed = @!formulations;
 
-    Set.new(@formulation.grep(-> $p {
-      if (@formulation.elems == 1) {
-        True;
-      } elsif ($p (elem) $.tokens) {
-        my @removed = @formulation.grep(* ne $p);
-        my @with-same-length = @others.grep(*.elems == @formulation.elems);
-        my @with-same-length-removed = @with-same-length.map(*.grep({$_ ne $p}));
-        my @others-removed = @others.map(*.grep({$_ ne $p}));
+    # Iterate through params in order of uses (more common ones are more likely to be removable)
+    my $param-counts = @!formulations.flatmap(*.flat).Bag;
+    my @params = $param-counts.keys.sort({ $param-counts{$^b} cmp $param-counts{$^a} });
+    for @params -> $p {
+      next unless $p (elem) %!tokens;
+
+      # Heuristic: if one token is all that's left, we shouldn't remove it, unless it's something like a semicolon
+      if $p eq 'SEMICOLON' || [$p] !~~ @formulations-removed.any {
+        my $new-implied = $!implied (|) Set.new($p);
+        my @new-formulations-removed = @formulations-removed.map(*.grep({$_ !(elem) $new-implied}).Array);
+        my @new-formulations-removed-strings = @new-formulations-removed.map(*.join(' '));
 
         # Start with all the rules of the same length. If you remove this param from all
         # of them, and it was present in all of them, then it was not necessary, as long
         # as removal did not produce any duplicate rules
-        !(@removed.elems == @with-same-length-removed.map(*.elems).all) &&
-            @removed !~~ @others-removed.any;
-      } else {
-        True;
+        if @new-formulations-removed-strings.Set.elems == @new-formulations-removed-strings.elems {
+          $!implied = $new-implied;
+          @formulations-removed = @new-formulations-removed;
+        }
       }
-    }).list);
+    }
+  }
+
+  method make-class-def {
+    "class {classify($.name)} private (_source: String)";
   }
 
   method make-signature(@formulation) {
-    my $necessary = self.necessary-params(@formulation);
+    my $counts = Bag.new;
     my @param-defs = @formulation.map(-> $p {
-      if $p (elem) $necessary {
-        "{$p}: {classify($p)}";
-      } else {
+      if $p (elem) $.implied {
         Nil;
+      } else {
+        $counts = $counts (+) $p;
+        my Str $suffix = $counts{$p} > 1 ?? $counts{$p}.Str !! '';
+        "{paramify($p)}{$suffix}: {classify($p)}";
       }
     }).grep(*.defined);
 
@@ -84,16 +103,14 @@ class RuleGenerator {
   }
 
   method make-body(@formulation) {
-    my $necessary = self.necessary-params(@formulation);
+    my $counts = Bag.new;
     my @formulation-strs = @formulation.map(-> $p {
-      if $p (elem) $necessary {
-        if $p (elem) $literal {
-          '${' ~ $p ~ '}';
-        } else {
-          '${' ~ $p ~ '.source()}';
-        }
+      if $p (elem) %.tokens {
+        %.tokens{$p} ~ ' ';
       } else {
-        '${' ~ classify($p) ~ '().source()}';
+        $counts = $counts (+) $p;
+        my Str $suffix = $counts{$p} > 1 ?? $counts{$p}.Str !! '';
+        '${' ~ paramify($p) ~ $suffix ~ '.source()}';
       }
     });
     'this(s"' ~ @formulation-strs.join("") ~ '")';
@@ -104,7 +121,7 @@ class RuleGenerator {
   }
 
   method source() {
-    return self.make-class-def ~ "\{\n" ~
+    return self.make-class-def ~ " \{\n" ~
       @.formulations
         .map( -> $f { '  ' ~ self.make-signature($f) ~ ' = ' ~ self.make-body($f) } )
         .join("\n") ~
@@ -115,13 +132,22 @@ class RuleGenerator {
 
 class TokenGenerator {
   has Str $.name;
-  has Str $.source;
 
   method source() {
-    return q:to/SOURCE/;
-      class ${classify($.name)} {
-        def source() = "${$.source}"
-      }
+    return qq:to/SOURCE/;
+      class {classify($.name)}
+      SOURCE
+  }
+}
+
+class LiteralGenerator {
+  has Str $.name;
+
+  method source() {
+    return qq:to/SOURCE/;
+      class {classify($.name)}(value: String) \{
+        def source() = s"\$\{value\} "
+      \}
       SOURCE
   }
 }
@@ -152,7 +178,7 @@ grammar GrammarFile {
 }
 
 class GrammarActions {
-  has Set $.tokens;
+  has %.tokens;
 
   method TOP($/) {
     $/.make($<node>.map(*.made).grep(*.defined));
@@ -166,8 +192,7 @@ class GrammarActions {
     $/.make(RuleGenerator.new(
         name => $<rule-name>.Str,
         formulations => ($<formulation> || []).map(*.made),
-        tokens => $.tokens
-      ));
+        tokens => $.tokens));
   }
 
   method formulation($/) {
@@ -176,12 +201,28 @@ class GrammarActions {
 }
 
 #| Creates codegen classes from the GLES 3.0 grammar.
-sub MAIN(Str :$grammar-file, Str :$tokens-file, Str :$output-dir) {
+sub MAIN(Str :$grammar-file, Str :$tokens-file, Str :$output-file) {
   my $contents = $grammar-file.IO.slurp;
   my %tokens = from-json($tokens-file.IO.slurp);
+  my $fh = open $output-file, :w;
   my @rules = GrammarFile.parse(
       $contents,
-      actions => GrammarActions.new(
-          tokens => Set.new(%tokens.keys))).made;
-  say @rules.map(*.source).join("\n\n");
+      actions => GrammarActions.new(tokens => %tokens)).made;
+
+  $fh.say: "// DO NOT MODIFY: these classis are automatically generated!\n";
+
+  $fh.say: "// Tokens\n";
+  $fh.say: %tokens.keys.map(-> $name {
+    TokenGenerator.new(name => $name).source()
+  }).join("\n\n");
+
+  $fh.say: "\n// Literals\n";
+  $fh.say: @literals.map(-> $name {
+    LiteralGenerator.new(name => $name).source()
+  }).join("\n\n");
+
+  $fh.say: "\n// Rules\n";
+  $fh.say: @rules.map(*.source).join("\n\n");
+
+  $fh.close;
 }
