@@ -3,6 +3,7 @@
 use v6;
 use JSON::Tiny;
 
+# Tokens that you'll need to pass a literal value into
 my @literals = [
   'TYPE_NAME',
   'IDENTIFIER',
@@ -13,11 +14,15 @@ my @literals = [
   'FIELD_SELECTION'
 ];
 
+# Convert a rule name to a Scala class name
 sub classify(Str $rule-name) {
   $rule-name.split("_").map(*.lc.tc).join("");
 }
 
+# Convert a rule name into a Scala parameter name
 sub paramify(Str $rule-name) {
+  # If the rule name is all caps, keep the parameter name all caps so that it doesn't clash
+  # with builtin keywords (e.g. RETURN vs return)
   return $rule-name if $rule-name ~~ /^^ <[A..Z_\d]>+ $$/;
 
   $rule-name.split("_").pairs.map(-> $pair {
@@ -28,6 +33,9 @@ sub paramify(Str $rule-name) {
     }
   }).join("");
 }
+
+
+# Generator classes to build Scala classes out of grammar rules
 
 class RuleGenerator {
   has Str $.name;
@@ -42,6 +50,7 @@ class RuleGenerator {
     $!implied = Set.new;
 
 
+    # Populate the set of tokens that don't have to be passed in because they can be implied.
     # It isn't necessary to specify a param if it can be inferred by the other params.
     #
     # e.g. here, EQUAL is not necessary:
@@ -152,6 +161,11 @@ class LiteralGenerator {
   }
 }
 
+
+
+
+# Classes to parse the grammar text file and create Generator classes
+
 grammar GrammarFile {
   token TOP {
     ^ <node>* $
@@ -199,6 +213,8 @@ class GrammarActions {
     $/.make($<rule-name>.map(*.Str).grep(* ne 'EMPTY'));
   }
 }
+
+
 
 #| Creates codegen classes from the GLES 3.0 grammar.
 sub MAIN(Str :$grammar-file, Str :$tokens-file, Str :$output-file) {
