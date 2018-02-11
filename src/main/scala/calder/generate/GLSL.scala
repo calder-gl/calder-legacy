@@ -1,4 +1,4 @@
-// DO NOT MODIFY: these classis are automatically generated!
+// DO NOT MODIFY: these classes are automatically generated!
 
 
 package calder.generate
