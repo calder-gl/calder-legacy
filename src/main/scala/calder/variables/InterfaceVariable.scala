@@ -1,7 +1,6 @@
 /**
  * InterfaceVariable.scala
  */
-
 package calder.variables
 
 import calder.types.Qualifier

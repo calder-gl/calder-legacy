@@ -1,7 +1,6 @@
 /**
  * VariableSource.scala
  */
-
 package calder.variables
 
 import calder.types.MetaKind
@@ -17,8 +16,8 @@ class VariableSource(private val _srcType: Type, private val _srcName: String) {
 
   def declaration(): String =
     srcType.metakind match {
-      case MetaKind.Basic  ⇒ s"${_srcType.name} ${_srcName};"
-      case MetaKind.Struct ⇒ s"${_srcType.name} ${_srcName};"
-      case MetaKind.Array  ⇒ s"${_srcType.children()(0).name} ${_srcName}[];"
+      case MetaKind.Basic  => s"${_srcType.name} ${_srcName};"
+      case MetaKind.Struct => s"${_srcType.name} ${_srcName};"
+      case MetaKind.Array  => s"${_srcType.children()(0).name} ${_srcName}[];"
     }
 }

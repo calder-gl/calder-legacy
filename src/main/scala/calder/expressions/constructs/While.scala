@@ -1,7 +1,6 @@
 /**
  * While.scala
  */
-
 package calder.expressions.constructs
 
 import calder.expressions.Expression

@@ -1,7 +1,6 @@
 /**
-  * Calder.scala
-  */
-
+ * Calder.scala
+ */
 package calder
 
 import scala.scalajs.js.annotation._

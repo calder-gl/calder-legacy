@@ -1,7 +1,6 @@
 /**
  * ShaderPipeline.scala
  */
-
 package calder.shaders
 
 import calder.shaders.Shader
@@ -19,10 +18,10 @@ import org.scalajs.dom.raw.WebGLUniformLocation
 class ShaderPipeline(private val gl: WebGLRenderingContext,
                      private val vertexShader: Shader,
                      private val fragmentShader: Shader) {
+
   /**
    * Public Interface
    */
-
   var program: WebGLProgram = null
 
   def setAttribute(input: String, value: Array[Any], usage: Int = WebGLRenderingContext.STATIC_DRAW): Unit = {
@@ -40,7 +39,11 @@ class ShaderPipeline(private val gl: WebGLRenderingContext,
 
     // Bind values
     gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, buffer)
-    gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER, interfaceVariable.wrapAttributeBufferInTypedArray(value).asInstanceOf[ArrayBuffer], usage)
+    gl.bufferData(WebGLRenderingContext.ARRAY_BUFFER,
+                  interfaceVariable
+                    .wrapAttributeBufferInTypedArray(value)
+                    .asInstanceOf[ArrayBuffer],
+                  usage)
     gl.bindBuffer(WebGLRenderingContext.ARRAY_BUFFER, buffer)
 
     // Set gl.vertexAttribPointer values
@@ -49,8 +52,8 @@ class ShaderPipeline(private val gl: WebGLRenderingContext,
       interfaceVariable.size,
       interfaceVariable.glType(gl),
       false, // TODO: support normalization
-      0,     // TODO: support nonzero stride
-      0      // TODO: support nonzero offset
+      0, // TODO: support nonzero stride
+      0 // TODO: support nonzero offset
     )
 
     gl.enableVertexAttribArray(position)
@@ -77,15 +80,17 @@ class ShaderPipeline(private val gl: WebGLRenderingContext,
   /**
    * Private Interface
    */
-
   // Immutable maps
-  private val attributes: Map[String, InterfaceVariable] = filterAttributeQualifiers
-  private val uniforms: Map[String, InterfaceVariable]   = filterUniformQualifiers
+  private val attributes: Map[String, InterfaceVariable] =
+    filterAttributeQualifiers
+  private val uniforms: Map[String, InterfaceVariable] = filterUniformQualifiers
 
   // Mutable positions and buffers
   private val attributePositions = scala.collection.mutable.Map[String, Int]()
-  private val attributeBuffers   = scala.collection.mutable.Map[String, WebGLBuffer]()
-  private val uniformPositions   = scala.collection.mutable.Map[String, WebGLUniformLocation]()
+  private val attributeBuffers =
+    scala.collection.mutable.Map[String, WebGLBuffer]()
+  private val uniformPositions =
+    scala.collection.mutable.Map[String, WebGLUniformLocation]()
 
   private def compileProgram(vertexShader: Shader, fragmentShader: Shader) {
     val _program = gl.createProgram()
@@ -123,16 +128,17 @@ class ShaderPipeline(private val gl: WebGLRenderingContext,
 
   private def createBuffers(): Unit = {
     // Set 'uniform' positions
-    uniforms.mapValues(uniform ⇒ {
+    uniforms.mapValues(uniform => {
       val position = gl.getUniformLocation(program, uniform.name)
-      if (position == null) throw new Error(s"Unable to find uniform position for ${uniform.name}")
+      if (position == null)
+        throw new Error(s"Unable to find uniform position for ${uniform.name}")
       uniformPositions(uniform.name) = position
     })
 
     // Set 'attribute' positions and buffers
-    attributes.mapValues(attribute ⇒ {
+    attributes.mapValues(attribute => {
       attributePositions(attribute.name) = gl.getAttribLocation(program, attribute.name)
-      attributeBuffers(attribute.name)   = makeBuffer
+      attributeBuffers(attribute.name) = makeBuffer
     })
   }
 
@@ -143,14 +149,14 @@ class ShaderPipeline(private val gl: WebGLRenderingContext,
   }
 
   private def filterAttributeQualifiers(): Map[String, InterfaceVariable] =
-    vertexShader
-      .inputDeclarations
-      .filter(input ⇒ input.variable.qualifier == Qualifier.Attribute)
-      .map(input ⇒ input.variable.name → input.variable).toMap
+    vertexShader.inputDeclarations
+      .filter(input => input.variable.qualifier == Qualifier.Attribute)
+      .map(input => input.variable.name -> input.variable)
+      .toMap
 
   private def filterUniformQualifiers(): Map[String, InterfaceVariable] =
-    vertexShader
-      .inputDeclarations
-      .filter(input ⇒ input.variable.qualifier == Qualifier.Uniform)
-      .map(input ⇒ input.variable.name → input.variable).toMap
+    vertexShader.inputDeclarations
+      .filter(input => input.variable.qualifier == Qualifier.Uniform)
+      .map(input => input.variable.name -> input.variable)
+      .toMap
 }

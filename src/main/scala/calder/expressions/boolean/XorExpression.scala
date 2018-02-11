@@ -1,7 +1,6 @@
 /**
  * XorExpression.scala
  */
-
 package calder.expressions.boolean
 
 import calder.expressions.Expression

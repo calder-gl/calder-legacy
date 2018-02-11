@@ -1,7 +1,6 @@
 /**
  * PrefixIncrement.scala
  */
-
 package calder.expressions.math.unary
 
 import calder.expressions.Reference

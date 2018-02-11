@@ -1,7 +1,6 @@
 /**
  * Statement.scala
  */
-
 package calder.expressions.constructs
 
 import calder.SyntaxNode

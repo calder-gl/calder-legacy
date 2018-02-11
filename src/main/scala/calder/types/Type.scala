@@ -1,7 +1,6 @@
 /**
  * Type.scala
  */
-
 package calder.types
 
 import calder.exceptions.TypeException
@@ -13,11 +12,13 @@ import org.scalajs.dom.raw.WebGLUniformLocation
 class Type(private val _name: String, private val _metakind: MetaKind, private val _children: Array[Type]) {
   // Validate children types
   _metakind match {
-    case MetaKind.Basic ⇒
-      if (_children.length != 0) throw new TypeException("Basic kind cannot have any children types.")
-    case MetaKind.Array ⇒
-      if (_children.length != 1) throw new TypeException("Array kind must have exactly one child type.")
-    case _ ⇒ None
+    case MetaKind.Basic =>
+      if (_children.length != 0)
+        throw new TypeException("Basic kind cannot have any children types.")
+    case MetaKind.Array =>
+      if (_children.length != 1)
+        throw new TypeException("Array kind must have exactly one child type.")
+    case _ => None
   }
 
   def name(): String = _name
@@ -41,7 +42,8 @@ class Type(private val _name: String, private val _metakind: MetaKind, private v
   def size(): Int = 0
 
   def setUniform(gl: WebGLRenderingContext, position: WebGLUniformLocation, value: Array[Any]): Unit = {
-    if (_metakind != MetaKind.Basic) throw new Error("Unsupported attribute type")
+    if (_metakind != MetaKind.Basic)
+      throw new Error("Unsupported attribute type")
 
     /*
     _name match {
@@ -58,26 +60,27 @@ class Type(private val _name: String, private val _metakind: MetaKind, private v
       case Kind.Mat4  ⇒ gl.uniformMatrix4fv(position, false, value)
       case default ⇒ throw new Error("Unsupported uniform type")
     }
-    */
+   */
   }
 
   // Type Checking Helper Methods
 
   def isScalarType(): Boolean =
     _name match {
-      case "int" | "float" ⇒ true
-      case _ ⇒ false
+      case "int" | "float" => true
+      case _               => false
     }
 
   def isMatrixType(): Boolean =
     _name match {
-      case "mat2" | "mat3" | "mat4" ⇒ true
-      case _ ⇒ false
+      case "mat2" | "mat3" | "mat4" => true
+      case _                        => false
     }
 
   def isVectorType(): Boolean =
     _name match {
-      case "vec2" | "vec3" | "vec4" | "bvec2" | "bvec3" | "bvec4" | "ivec2" | "ivec3" | "ivec4" ⇒ true
-      case _ ⇒ false
+      case "vec2" | "vec3" | "vec4" | "bvec2" | "bvec3" | "bvec4" | "ivec2" | "ivec3" | "ivec4" =>
+        true
+      case _ => false
     }
 }

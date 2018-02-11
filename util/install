@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# Install scala, sbt, and scalafmt
+brew install scala
+brew install sbt
+brew install --HEAD olafurpg/scalafmt/scalafmt
+
+# Install pre-commit hook
+cp ./util/pre_commit .git/hooks/pre-commit

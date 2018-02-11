@@ -1,7 +1,6 @@
 /**
  * MetaKind.scala
  */
-
 package calder.types
 
 object MetaKind extends Enumeration {
