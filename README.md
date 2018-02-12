@@ -10,17 +10,12 @@ Written by &mdash; Paul Bardea, Tammy Liu, Abhishek Madan, Andrew McBurney, Dave
 git clone git@github.com:calder-gl/calder.git
 ```
 
-2. Install Scala
+2. Install Dependencies
 ```bash
-brew install scala
+./util/install
 ```
 
-3. Install sbt
-```bash
-brew install sbt
-```
-
-4. Launch sbt, compile and run
+3. Launch sbt, compile and run
 ```
 sbt
 > compile
