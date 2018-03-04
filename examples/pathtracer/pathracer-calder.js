@@ -201,7 +201,12 @@ const shaderPipeline = cgl.pipeline(
       gl_FragColor = vec4(avgColor, 1.0);
     } 
   `
-).build(gl);
+).fill({
+  numSpheres: cgl.int `3`,
+  numBounces: cgl.int `10`,
+  numSamples: cgl.int `10`,
+  pi: cgl.float `3.1415926535897932384626433832795`
+}).build(gl);
 
 let frame = 0;
 const startTime = (new Date()).getTime();
