@@ -17,6 +17,10 @@ precision mediump float;
 #define NUM_BOUNCES 10
 #define NUM_SAMPLES 10
 
+// Cycle length in seconds
+#define CAMERA_CYCLE_LENGTH 2.0
+#define FRAMES_PER_SECOND 60.0
+
 uniform float time;
 uniform int frame;
 uniform vec2 resolution;
@@ -83,17 +87,15 @@ float intersection(vec3 rayOrigin, vec3 rayDirection, vec3 sphereLocation, float
 
   if (descriminant < 0.0) {
     return -1.0;
-  } else if (descriminant == 0.0) {
-    return -b / (2.0*a);
   } else {
     float t = (-b - sqrt(descriminant)) / (2.0*a);
     float t2 = (-b + sqrt(descriminant)) / (2.0*a);
 
-    if (t > 0.0 && t2 > 0.0) {
+    if (t >= 0.0 && t2 >= 0.0) {
       return min(t, t2);
-    } else if (t > 0.0) {
+    } else if (t >= 0.0) {
       return t;
-    } else if (t2 > 0.0) {
+    } else if (t2 >= 0.0) {
       return t2;
     } else {
       return -1.0;
@@ -126,8 +128,9 @@ void main() {
 
   vec3 cameraLocationStart = vec3(0, 0, 0);
   vec3 cameraLocationEnd = vec3(1, 3, 1);
-  vec3 cameraLocation = cameraLocationStart +
-    sin(float(frame) * 0.01) * (cameraLocationEnd - cameraLocationStart);
+
+  // Slide back and forth between camera locations
+  vec3 cameraLocation = mix(cameraLocationStart, cameraLocationEnd, sin(float(frame) / (CAMERA_CYCLE_LENGTH * FRAMES_PER_SECOND)));
   vec3 cameraTarget = vec3(0.0, 10.0, 0.0);
   vec3 cameraUp = vec3(0, 0, 1);
   float cameraDistance = 0.3;
@@ -178,8 +181,8 @@ void main() {
         color *= background;
         break;
 
-        // Bounce the ray and change the color
       } else {
+        // Bounce the ray and change the color
         color *= closestColor;
         origin += direction * (closest - 0.001);
         direction = randomHemisphere(numSample, bounce, normalAt(origin, closestLocation));

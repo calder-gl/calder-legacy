@@ -19,6 +19,8 @@ const shaderPipeline = cgl.pipeline(
     int NUM_SPHERES = {{numSpheres: int}};
     int NUM_BOUNCES = {{numBounces: int}};
     int NUM_SAMPLES = {{numSamples: int}};
+    float CAMERA_CYCLE_LENGTH = {{cameraCycleLength: float}}
+    float FRAMES_PER_SECOND = {{framesPerSecond: float}}
     float M_PI = {{pi: float}};
 
     int randCounter = 0;
@@ -81,17 +83,15 @@ const shaderPipeline = cgl.pipeline(
 
       if (descriminant < 0.0) {
         return -1.0;
-      } else if (descriminant == 0.0) {
-        return -b / (2.0*a);
       } else {
         float t = (-b - sqrt(descriminant)) / (2.0*a);
         float t2 = (-b + sqrt(descriminant)) / (2.0*a);
 
-        if (t > 0.0 && t2 > 0.0) {
+        if (t >= 0.0 && t2 >= 0.0) {
           return min(t, t2);
-        } else if (t > 0.0) {
+        } else if (t >= 0.0) {
           return t;
-        } else if (t2 > 0.0) {
+        } else if (t2 >= 0.0) {
           return t2;
         } else {
           return -1.0;
@@ -128,8 +128,8 @@ const shaderPipeline = cgl.pipeline(
 
       vec3 cameraLocationStart = vec3(0, 0, 0);
       vec3 cameraLocationEnd = vec3(1, 3, 1);
-      vec3 cameraLocation = cameraLocationStart +
-        sin(float(frame) * 0.01) * (cameraLocationEnd - cameraLocationStart);
+      // Slide back and forth between camera locations
+      vec3 cameraLocation = mix(cameraLocationStart, cameraLocationEnd, sin(float(frame) / (CAMERA_CYCLE_LENGTH * FRAMES_PER_SECOND)));
       vec3 cameraTarget = vec3(0.0, 10.0, 0.0);
       vec3 cameraUp = vec3(0, 0, 1);
       float cameraDistance = 0.3;
@@ -185,8 +185,8 @@ const shaderPipeline = cgl.pipeline(
             color *= background;
             break;
 
-            // Bounce the ray and change the color
           } else {
+            // Bounce the ray and change the color
             color *= sphereColors[closestIndex];
             origin += direction * (closest - 0.001);
             direction = randomHemisphere(
@@ -205,7 +205,9 @@ const shaderPipeline = cgl.pipeline(
   numSpheres: cgl.int `3`,
   numBounces: cgl.int `10`,
   numSamples: cgl.int `10`,
-  pi: cgl.float `3.1415926535897932384626433832795`
+  pi: cgl.float `3.1415926535897932384626433832795`,
+  cameraCycleLength: cgl.float `2`,
+  framesPerSecond: cgl.float `60`,
 }).build(gl);
 
 let frame = 0;
@@ -213,19 +215,19 @@ const startTime = (new Date()).getTime();
 function draw() {
   // Uses default clear settings, maybe allow passing an object
   // with overrides
-  pipeline.clear();
-  pipeline.useProgram();
+  shaderPipeline.clear();
+  shaderPipeline.useProgram();
 
-  // The pipeline should be able to handle flattening
-  pipeline.vertexPosition = [
+  // The shaderPipeline should be able to handle flattening
+  shaderPipeline.vertexPosition = [
     [-1, -1],
     [1, -1],
     [-1, 1],
     [1, 1]];
-  pipeline.time = (new Date()).getTime() - startTime;
-  pipeline.frame = frame++;
-  pipeline.resolution = [stage.width, stage.height];
-  pipeline.draw(4); // is there a better way to get # vertices?
+  shaderPipeline.time = (new Date()).getTime() - startTime;
+  shaderPipeline.frame = frame++;
+  shaderPipeline.resolution = [stage.width, stage.height];
+  shaderPipeline.draw(4); // is there a better way to get # vertices?
 
   requestAnimationFrame(draw);
 }
