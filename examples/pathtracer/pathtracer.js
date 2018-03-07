@@ -29,6 +29,10 @@ int randCounter = 0;
 
 #define M_PI 3.1415926535897932384626433832795
 
+bool approx(float a, float b) {
+  return abs(a - b) < 1e-6;
+}
+
 float random(vec3 scale, float seed) {
   return fract(sin(dot(gl_FragCoord.xyz + seed, scale)) * 43758.5453 + seed);
 }
@@ -85,7 +89,9 @@ float intersection(vec3 rayOrigin, vec3 rayDirection, vec3 sphereLocation, float
   float c = dot(toCenter, toCenter) - sphereRadius * sphereRadius;
   float descriminant = b*b - 4.0*a*c;
 
-  if (descriminant < 0.0) {
+  if (approx(descriminant, 0.0)) {
+    return -b / (2.0*a);
+  } else if (descriminant < 0.0) {
     return -1.0;
   } else {
     float t = (-b - sqrt(descriminant)) / (2.0*a);

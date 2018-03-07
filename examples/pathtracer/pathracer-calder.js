@@ -81,10 +81,10 @@ const shaderPipeline = cgl.pipeline(
       float c = dot(toCenter, toCenter) - sphereRadius * sphereRadius;
       float descriminant = b*b - 4.0*a*c;
 
-      if (descriminant < 0.0) {
-        return -1.0;
-      } else if (approx(descriminant, 0.0)) {
+      if (approx(descriminant, 0.0)) {
         return -b / (2.0*a);
+      } else if (descriminant < 0.0) {
+        return -1.0;
       } else {
         float t = (-b - sqrt(descriminant)) / (2.0*a);
         float t2 = (-b + sqrt(descriminant)) / (2.0*a);
