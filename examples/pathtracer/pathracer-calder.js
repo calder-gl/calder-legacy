@@ -83,6 +83,8 @@ const shaderPipeline = cgl.pipeline(
 
       if (descriminant < 0.0) {
         return -1.0;
+      } else if (approx(descriminant, 0.0)) {
+        return -b / (2.0*a);
       } else {
         float t = (-b - sqrt(descriminant)) / (2.0*a);
         float t2 = (-b + sqrt(descriminant)) / (2.0*a);
