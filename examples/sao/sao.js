@@ -4,8 +4,11 @@ const ext = gl.getExtension('WEBGL_draw_buffers');
 const extFloat = gl.getExtension('OES_texture_float');
 const extDepth = gl.getExtension('WEBGL_depth_texture');
 
-const zNear = 1;
-const zFar = 1000;
+//////////////////////////////////////////////////
+// Pass 1: Geometry
+//
+// Renders color, normal, and position to buffers
+//////////////////////////////////////////////////
 
 const vertexShaderSource = `
 precision highp float;
@@ -65,146 +68,6 @@ gl.attachShader(geometryPass, vertexShader);
 gl.attachShader(geometryPass, fragmentShader);
 gl.linkProgram(geometryPass);
 
-const vertexShaderSourceFinal = `
-precision highp float;
-attribute vec2 vertexPosition;
-
-void main() {
-  gl_Position = vec4(vertexPosition, 0.0, 1.0);
-}
-`;
-
-const fragmentShaderSourceFinal = `
-precision highp float;
-
-uniform sampler2D diffuseBuf;
-uniform sampler2D normalBuf;
-uniform sampler2D positionBuf;
-uniform sampler2D depthBuf;
-
-uniform vec2 screenSize;
-
-const int NUM_SAMPLES = 30;
-const int NUM_SPIRAL_TURNS = 7;
-const float bias = 1.0;
-
-#define M_PI 3.1415926535897932384626433832795
-
-float random(vec3 scale, float seed) {
-  return fract(sin(dot(gl_FragCoord.xyz + seed, scale)) * 43758.5453 + seed);
-}
-
-vec2 tapLocation(int sampleNumber, float spinAngle, out float radiusSS) {
-  // radius relative to radiusSS
-  float alpha = (float(sampleNumber) + 0.5) * (1.0 / float(NUM_SAMPLES));
-  float angle = alpha * (float(NUM_SPIRAL_TURNS) * 6.28) + spinAngle;
-  
-  radiusSS = alpha;
-  return vec2(cos(angle), sin(angle));
-}
-
-vec3 getPositionVS(const vec2 uv) {
-  return texture2D(positionBuf, uv).xyz;
-}
-
-vec3 getOffsetPositionVS(vec2 uv, vec2 unitOffset, float radiusSS) {
-  vec2 offsetUV = uv + radiusSS * unitOffset * vec2(1.0/screenSize.x, 1.0/screenSize.y);
-  return getPositionVS(offsetUV);
-}
-
-float sampleAO(vec2 uv, vec3 positionVS, vec3 normalVS, float sampleRadiusSS, float sampleRadiusWS, int tapIndex, float rotationAngle) {
-  const float epsilon = 0.1;
-  float radiusSquared = sampleRadiusWS * sampleRadiusWS;
-
-  float radiusSS;
-  vec2 unitOffset = tapLocation(tapIndex, rotationAngle, radiusSS);
-  radiusSS *= sampleRadiusSS;
-
-  vec3 Q = getOffsetPositionVS(uv, unitOffset, radiusSS);
-  vec3 v = Q - positionVS;
-
-  float vv = dot(v, v);
-  float vn = dot(v, normalVS) - bias;
-
-  float f = max(radiusSquared - vv, 0.0) / radiusSquared;
-  return f * f * f * max(vn / (epsilon + vv), 0.0);
-}
-
-
-void main() {
-  vec2 texCoords = gl_FragCoord.xy * vec2(1.0/screenSize.x, 1.0/screenSize.y);
-  vec2 vUV = texCoords;
-
-  vec4 diffuseBufInfo = texture2D(diffuseBuf, texCoords);
-  vec4 normalBufInfo = texture2D(normalBuf, texCoords);
-  vec4 positionBufInfo = texture2D(positionBuf, texCoords);
-
-  vec3 originVS = getPositionVS(vUV);
-  vec3 normalVS = normalBufInfo.xyz;
-
-  vec3 sampleNoise = vec3(
-    random(vec3(12.9898, 78.233, 151.7182), 0.0),
-    random(vec3(63.7264, 10.873, 623.6736), 100.0),
-    random(vec3(63.7264, 10.873, 623.6736), 1000.0));
-
-  float randomPatternRotationAngle = 2.0 * M_PI * sampleNoise.x;
-
-  float radiusWS  = 20.0; // radius of influence in world space
-  float radiusSS  = 100.0 * radiusWS / originVS.y; // radius of influence in screen space
-  float occlusion = 0.0;
-
-  for (int i = 0; i < NUM_SAMPLES; i++) {
-    occlusion += sampleAO(texCoords, originVS, normalVS, radiusSS, radiusWS, i, randomPatternRotationAngle);
-  }
-
-  occlusion = 1.0 - occlusion / (4.0 * float(NUM_SAMPLES));
-  float intensity = 200.0;
-  occlusion = clamp(pow(occlusion, 1.0 + intensity), 0.0, 1.0);
-  
-  vec3 lightDir = normalize(vec3(150.0, 80.0, 50.0) - positionBufInfo.xyz);
-  vec3 viewDir = normalize(vec3(0.0, 0.0, 0.0) - positionBufInfo.xyz);
-  vec3 normal = normalize(normalBufInfo.xyz);
-  float spec = pow(max(dot(viewDir, reflect(-lightDir, normal)), 0.0), 50.0);
-  vec3 specular = 0.3 * spec * vec3(1.0, 1.0, 1.0);
-
-  gl_FragColor = vec4((diffuseBufInfo.xyz + specular) * occlusion, 1.0);
-}
-`;
-
-const fragmentShaderFinal = gl.createShader(gl.FRAGMENT_SHADER);
-gl.shaderSource(fragmentShaderFinal, fragmentShaderSourceFinal);
-gl.compileShader(fragmentShaderFinal);
-
-const vertexShaderFinal = gl.createShader(gl.VERTEX_SHADER);
-gl.shaderSource(vertexShaderFinal, vertexShaderSourceFinal);
-gl.compileShader(vertexShaderFinal);
-
-const finalPass = gl.createProgram();
-gl.attachShader(finalPass, vertexShaderFinal);
-gl.attachShader(finalPass, fragmentShaderFinal);
-gl.linkProgram(finalPass);
-
-const infoFinal = {
-  diffuseBuf: gl.getUniformLocation(finalPass, 'diffuseBuf'),
-  normalBuf: gl.getUniformLocation(finalPass, 'normalBuf'),
-  positionBuf: gl.getUniformLocation(finalPass, 'positionBuf'),
-  depthBuf: gl.getUniformLocation(finalPass, 'depthBuf'),
-  screenSize: gl.getUniformLocation(finalPass, 'screenSize'),
-  vertexPosition: gl.getAttribLocation(finalPass, 'vertexPosition'),
-};
-
-const positionFinal = gl.createBuffer();
-gl.bindBuffer(gl.ARRAY_BUFFER, positionFinal);
-gl.bufferData(
-  gl.ARRAY_BUFFER,
-  new Float32Array([
-    -1.0, -1.0,
-    1.0, -1.0,
-    -1.0, 1.0,
-    1.0, 1.0]),
-  gl.STATIC_DRAW);
-
-
 const info = {
   camera: gl.getUniformLocation(geometryPass, 'camera'),
   projection: gl.getUniformLocation(geometryPass, 'projection'),
@@ -214,6 +77,7 @@ const info = {
   vertexColor: gl.getAttribLocation(geometryPass, 'vertexColor'),
 };
 
+// Set up the buffers
 const fb = gl.createFramebuffer();
 gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
 
@@ -222,6 +86,9 @@ const normalBuf = gl.createTexture();
 const positionBuf = gl.createTexture();
 const depthBuf = gl.createTexture();
 
+// Each buffer needs a texture to render to. We're storing arbitrary floats in each,
+// but since it's a texture, we still have to tell it it's storing RGBA values. We'll
+// just read them as points/vectors instead of colors.
 gl.bindTexture(gl.TEXTURE_2D, diffuseBuf);
 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
@@ -243,6 +110,8 @@ gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, canvas.width, canvas.height, 0, gl.RGBA, gl.FLOAT, null);
 
+// The depth one is different because we won't read from it ourselves, we just need it
+// to be able to tell which fragment is closest to the camera and therefore visible.
 gl.bindTexture(gl.TEXTURE_2D, depthBuf);
 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
@@ -250,6 +119,8 @@ gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT, canvas.width, canvas.height, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_SHORT, null);
 
+// In order to be able to render to multiple buffers, we need to bind each texture
+// to a color attachment. Unfortunately there are just constants for each. It's not pretty.
 gl.framebufferTexture2D(
   gl.FRAMEBUFFER, ext.COLOR_ATTACHMENT0_WEBGL, gl.TEXTURE_2D, diffuseBuf, 0);
 gl.framebufferTexture2D(
@@ -259,7 +130,11 @@ gl.framebufferTexture2D(
 gl.framebufferTexture2D(
   gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, depthBuf, 0);
 
+// Set up the geometry to render
+
+// The teapot model didn't come with colors for each vertex so let's add some
 teapot.vertexColor = teapot.vertexPositions.map((_, i) => {
+  // There are 3 components to position and 3 components to color, so this maps xyz to rgb
   switch (i % 3) {
     case 0: return 92/256;
     case 1: return 130/256;
@@ -267,6 +142,7 @@ teapot.vertexColor = teapot.vertexPositions.map((_, i) => {
   }
 });
 
+// A rectangle below the teapot
 const ground = {
   vertexPositions: [
     -30, -10, 40,
@@ -292,6 +168,7 @@ const ground = {
   ],
 };
 
+// Put the vertex information into buffers
 const position = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, position);
 gl.bufferData(
@@ -323,17 +200,175 @@ gl.bufferData(
 const fieldOfView = 45 * Math.PI / 180;
 const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
 
+const zNear = 1;
+const zFar = 1000;
 const projectionMatrix = mat4.create();
 mat4.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
 
 const cameraMatrix = mat4.create();
 mat4.translate(cameraMatrix, cameraMatrix, [0.0, 0.0, -40.0]);
 
+// We will update this each frame to rotate the teapot
 const teapotTransform = mat4.create();
 
-let frame = 0;
-const startTime = (new Date()).getTime();
+
+
+//////////////////////////////////////////////////
+// Pass 2: Ambient Occlusion
+//
+// Calculates shadows based on buffered info
+//////////////////////////////////////////////////
+
+const vertexShaderSourceFinal = `
+precision highp float;
+attribute vec2 vertexPosition;
+
+void main() {
+  gl_Position = vec4(vertexPosition, 0.0, 1.0);
+}
+`;
+
+const fragmentShaderSourceFinal = `
+precision highp float;
+
+uniform sampler2D diffuseBuf;
+uniform sampler2D normalBuf;
+uniform sampler2D positionBuf;
+uniform sampler2D depthBuf;
+
+uniform vec2 screenSize;
+
+const int NUM_SAMPLES = 30;
+const int NUM_SPIRAL_TURNS = 7;
+const float EPSILON = 0.1;
+const float BIAS = 0.5;
+const float WORLD_SPACE_RADIUS = 20.0; // radius of influence in world space
+const float INTENSITY = 200.0;
+
+const float M_PI = 3.1415926535897932384626433832795;
+
+float random(vec3 scale, float seed) {
+  return fract(sin(dot(gl_FragCoord.xyz + seed, scale)) * 43758.5453 + seed);
+}
+
+vec3 worldFromScreen(const vec2 screen) {
+  return texture2D(positionBuf, screen).xyz;
+}
+
+vec3 getOffsetPositionVS(vec2 screenOrigin, vec2 unitOffset, float screenSpaceRadius) {
+  // Offset by screenSpaceRadius pixels in the direction of unitOffset
+  vec2 screenOffset = screenOrigin +
+    screenSpaceRadius * unitOffset * vec2(1.0 / screenSize.x, 1.0 / screenSize.y);
+
+  // Get the world coordinate from the offset screen space coordinate
+  return worldFromScreen(screenOffset);
+}
+
+void main() {
+  vec2 screenSpaceOrigin = gl_FragCoord.xy * vec2(1.0/screenSize.x, 1.0/screenSize.y);
+
+  vec3 worldSpaceOrigin = worldFromScreen(screenSpaceOrigin);
+  vec3 normalAtOrigin = normalize(texture2D(normalBuf, screenSpaceOrigin).xyz);
+  vec3 colorAtOrigin = texture2D(diffuseBuf, screenSpaceOrigin).xyz;
+
+  vec3 randomScale = vec3(12.9898, 78.233, 151.7182);
+  vec3 sampleNoise = vec3(
+    random(randomScale, 0.0),
+    random(randomScale, 1.0),
+    random(randomScale, 2.0));
+
+  float initialAngle = 2.0 * M_PI * sampleNoise.x;
+
+  // radius of influence in screen space
+  float screenSpaceSampleRadius  = 100.0 * WORLD_SPACE_RADIUS / worldSpaceOrigin.y;
+
+  float occlusion = 0.0;
+  for (int sampleNumber = 0; sampleNumber < NUM_SAMPLES; sampleNumber++) {
+    // Step 1:
+    // Looking at the 2D image of the scene, sample the points surrounding the current one
+    // in a spiral pattern
+
+    float sampleProgress = (float(sampleNumber) + 0.5) * (1.0 / float(NUM_SAMPLES));
+    float angle = sampleProgress * (float(NUM_SPIRAL_TURNS) * 2.0 * M_PI) + initialAngle;
+    
+    float sampleDistance = sampleProgress * screenSpaceSampleRadius;
+    vec2 angleUnitVector = vec2(cos(angle), sin(angle));
+
+    // Step 2:
+    // Get the 3d coordinate corresponding to the sample on the spiral
+    vec3 worldSpaceSample =
+      getOffsetPositionVS(screenSpaceOrigin, angleUnitVector, sampleDistance);
+
+    // Step 3:
+    // Approximate occlusion from this sample
+    vec3 originToSample = worldSpaceSample - worldSpaceOrigin;
+    float squaredDistanceToSample = dot(originToSample, originToSample);
+
+    // vn is proportional to how close the sample point is to the origin point along
+    // the normal at the origin
+    float vn = dot(originToSample, normalAtOrigin) - BIAS;
+
+    // f is proportional to how close the sample point is to the origin point in the
+    // sphere of influence in world space
+    float radiusSquared = WORLD_SPACE_RADIUS * WORLD_SPACE_RADIUS;
+    float f = max(radiusSquared - squaredDistanceToSample, 0.0) / radiusSquared;
+    float sampleOcclusion =  f * f * f * max(vn / (EPSILON + squaredDistanceToSample), 0.0);
+
+    // Accumulate occlusion
+    occlusion += sampleOcclusion;
+  }
+
+  occlusion = 1.0 - occlusion / (4.0 * float(NUM_SAMPLES));
+  occlusion = clamp(pow(occlusion, 1.0 + INTENSITY), 0.0, 1.0);
+  
+  // Add specular highlights
+  vec3 lightDir = normalize(vec3(150.0, 80.0, 50.0) - worldSpaceOrigin);
+  vec3 viewDir = normalize(vec3(0.0, 0.0, 0.0) - worldSpaceOrigin);
+  float spec = pow(max(dot(viewDir, reflect(-lightDir, normalAtOrigin)), 0.0), 50.0);
+  vec3 specular = 0.3 * spec * vec3(1.0, 1.0, 1.0);
+
+  gl_FragColor = vec4((colorAtOrigin + specular) * occlusion, 1.0);
+}
+`;
+
+const fragmentShaderFinal = gl.createShader(gl.FRAGMENT_SHADER);
+gl.shaderSource(fragmentShaderFinal, fragmentShaderSourceFinal);
+gl.compileShader(fragmentShaderFinal);
+
+const vertexShaderFinal = gl.createShader(gl.VERTEX_SHADER);
+gl.shaderSource(vertexShaderFinal, vertexShaderSourceFinal);
+gl.compileShader(vertexShaderFinal);
+
+const finalPass = gl.createProgram();
+gl.attachShader(finalPass, vertexShaderFinal);
+gl.attachShader(finalPass, fragmentShaderFinal);
+gl.linkProgram(finalPass);
+
+const infoFinal = {
+  diffuseBuf: gl.getUniformLocation(finalPass, 'diffuseBuf'),
+  normalBuf: gl.getUniformLocation(finalPass, 'normalBuf'),
+  positionBuf: gl.getUniformLocation(finalPass, 'positionBuf'),
+  depthBuf: gl.getUniformLocation(finalPass, 'depthBuf'),
+  screenSize: gl.getUniformLocation(finalPass, 'screenSize'),
+  vertexPosition: gl.getAttribLocation(finalPass, 'vertexPosition'),
+};
+
+// Create a rectangle so that we basically just call the fragment shader on
+// each pixel of the screen without any extra geometry
+const positionFinal = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, positionFinal);
+gl.bufferData(
+  gl.ARRAY_BUFFER,
+  new Float32Array([
+    -1.0, -1.0,
+    1.0, -1.0,
+    -1.0, 1.0,
+    1.0, 1.0]),
+  gl.STATIC_DRAW);
+
+
 function draw() {
+  // Render geometry pass
   gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
   gl.clearDepth(1.0);
@@ -402,10 +437,11 @@ function draw() {
 
   gl.disableVertexAttribArray(info.vertexPosition);
   gl.disableVertexAttribArray(info.vertexNormal);
+  gl.disableVertexAttribArray(info.vertexColor);
 
-  // Final pass
+  // Render final pass
 
-  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null); // Important: don't use the old framebuffer
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
   gl.clearDepth(1.0);
   gl.enable(gl.DEPTH_TEST);
