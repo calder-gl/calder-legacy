@@ -66,9 +66,9 @@ const diffuse = cgl.texture({
   wrapS: cgl.CLAMP_TO_EDGE,
   wrapT: cgl.CLAMP_TO_EDGE
 });
-const normal = cgl.texture({width: canvas.width, height: canvas.height});
-const position = cgl.texture({width: canvas.width, height: canvas.height});
-const depth = cgl.texture({type: depth, width: canvas.width, height: canvas.height});
+const normal = cgl.texture({ width: canvas.width, height: canvas.height });
+const position = cgl.texture({ width: canvas.width, height: canvas.height });
+const depth = cgl.texture({ type: depth, width: canvas.width, height: canvas.height });
 
 // Set up the geometry to render
 
@@ -76,9 +76,9 @@ const depth = cgl.texture({type: depth, width: canvas.width, height: canvas.heig
 teapot.vertexColor = teapot.vertexPositions.map((_, i) => {
   // There are 3 components to position and 3 components to color, so this maps xyz to rgb
   switch (i % 3) {
-    case 0: return 92/256;
-    case 1: return 130/256;
-    case 2: return 153/256;
+    case 0: return 92 / 256;
+    case 1: return 130 / 256;
+    case 2: return 153 / 256;
   }
 });
 
@@ -127,11 +127,11 @@ geometryPass.projection = projectionMatrix;
 geometryPass.camera = cameraMatrix;
 
 
-//////////////////////////////////////////////////
+// ////////////////////////////////////////////////
 // Pass 2: Ambient Occlusion
 //
 // Calculates shadows based on buffered info
-//////////////////////////////////////////////////
+// ////////////////////////////////////////////////
 
 const aoPass = cgl.pixelPipeline(
   cgl.fragment `
@@ -234,7 +234,7 @@ const aoPass = cgl.pixelPipeline(
   `
 ).build(gl);
 
-const ao = cgl.texture({width: canvas.width, height: canvas.height});
+const ao = cgl.texture({ width: canvas.width, height: canvas.height });
 
 aoPass.screenSize = [canvas.width, canvas.height];
 
@@ -262,7 +262,8 @@ const finalPass = cgl.pixelPipeline(
       for (int x = -4; x <= 4; x++) {
         for (int y = -4; y <= 4; y++) {
           if (x != 0 || y != 0) {
-            vec2 samplePosition = screenSpaceOrigin + vec2(float(x * SCALE), float(y * SCALE)) * vec2(1.0/screenSize.x, 1.0/screenSize.y);
+            vec2 samplePosition = screenSpaceOrigin +
+              vec2(float(x * SCALE), float(y * SCALE)) * vec2(1.0/screenSize.x, 1.0/screenSize.y);
             float ao = texture2D(aoBuf, samplePosition).x;
             float sampleDepth = texture2D(depthBuf, samplePosition).z;
             int kx = 4 - (x < 0 ? -x : x);

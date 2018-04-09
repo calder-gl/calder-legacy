@@ -5,11 +5,11 @@ const extFloat = gl.getExtension('OES_texture_float');
 const extDepth = gl.getExtension('WEBGL_depth_texture');
 const extDeriv = gl.getExtension('OES_standard_derivatives');
 
-//////////////////////////////////////////////////
+// ////////////////////////////////////////////////
 // Pass 1: Geometry
 //
 // Renders color, normal, and position to buffers
-//////////////////////////////////////////////////
+// ////////////////////////////////////////////////
 
 const vertexShaderSource = `
 precision highp float;
@@ -118,7 +118,17 @@ gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT, canvas.width, canvas.height, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_SHORT, null);
+gl.texImage2D(
+  gl.TEXTURE_2D,
+  0,
+  gl.DEPTH_COMPONENT,
+  canvas.width,
+  canvas.height,
+  0,
+  gl.DEPTH_COMPONENT,
+  gl.UNSIGNED_SHORT,
+  null
+);
 
 // In order to be able to render to multiple buffers, we need to bind each texture
 // to a color attachment. Unfortunately there are just constants for each. It's not pretty.
@@ -137,9 +147,9 @@ gl.framebufferTexture2D(
 teapot.vertexColor = teapot.vertexPositions.map((_, i) => {
   // There are 3 components to position and 3 components to color, so this maps xyz to rgb
   switch (i % 3) {
-    case 0: return 92/256;
-    case 1: return 130/256;
-    case 2: return 153/256;
+    case 0: return 92 / 256;
+    case 1: return 130 / 256;
+    case 2: return 153 / 256;
   }
 });
 
@@ -195,7 +205,8 @@ const index = gl.createBuffer();
 gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index);
 gl.bufferData(
   gl.ELEMENT_ARRAY_BUFFER,
-  new Uint16Array([...teapot.indices, ...ground.indices.map(i => i + teapot.vertexPositions.length/3)]),
+  new Uint16Array(
+    [...teapot.indices, ...ground.indices.map(i => i + teapot.vertexPositions.length / 3)]),
   gl.STATIC_DRAW);
 
 const fieldOfView = 45 * Math.PI / 180;
@@ -213,12 +224,11 @@ mat4.translate(cameraMatrix, cameraMatrix, [0.0, 0.0, -40.0]);
 const teapotTransform = mat4.create();
 
 
-
-//////////////////////////////////////////////////
+// ////////////////////////////////////////////////
 // Pass 2: Ambient Occlusion
 //
 // Calculates shadows based on buffered info
-//////////////////////////////////////////////////
+// ////////////////////////////////////////////////
 
 const vertexShaderSourceAO = `
 precision highp float;
@@ -411,15 +421,13 @@ gl.bufferData(
   gl.STATIC_DRAW);
 
 
-
-//////////////////////////////////////////////////
+// ////////////////////////////////////////////////
 // Pass 3: Final shading
 //
 // Combines AO and Phong shading
-//////////////////////////////////////////////////
+// ////////////////////////////////////////////////
 
 const vertexShaderSourceFinal = vertexShaderSourceAO;
-
 const fragmentShaderSourceFinal = `
 #extension GL_OES_standard_derivatives : enable
 precision highp float;
@@ -444,7 +452,8 @@ float blurAO(vec2 screenSpaceOrigin) {
   for (int x = -4; x <= 4; x++) {
     for (int y = -4; y <= 4; y++) {
       if (x != 0 || y != 0) {
-        vec2 samplePosition = screenSpaceOrigin + vec2(float(x * SCALE), float(y * SCALE)) * vec2(1.0/screenSize.x, 1.0/screenSize.y);
+        vec2 samplePosition = screenSpaceOrigin +
+          vec2(float(x * SCALE), float(y * SCALE)) * vec2(1.0/screenSize.x, 1.0/screenSize.y);
         float ao = texture2D(aoBuf, samplePosition).x;
         float sampleDepth = texture2D(depthBuf, samplePosition).z;
         int kx = 4 - (x < 0 ? -x : x);
@@ -573,8 +582,10 @@ function draw() {
     ext.COLOR_ATTACHMENT1_WEBGL, // gl_FragData[1]
     ext.COLOR_ATTACHMENT2_WEBGL, // gl_FragData[2]
   ]);
-  
-  gl.drawElements(gl.TRIANGLES, teapot.indices.length + ground.indices.length, gl.UNSIGNED_SHORT, 0);
+
+  gl.drawElements(
+    gl.TRIANGLES, teapot.indices.length +
+      ground.indices.length, gl.UNSIGNED_SHORT, 0);
 
   gl.disableVertexAttribArray(info.vertexPosition);
   gl.disableVertexAttribArray(info.vertexNormal);
