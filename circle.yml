@@ -2,10 +2,13 @@ version: 1
 
 machine:
   node:
-    version: 0.10.22
+    version: 9.5.0
 
 test:
   pre:
-      - cat /dev/null | sbt test:compile
+    - npm config set registry="http://registry.npmjs.org/"
+    - npm install -g eslint
+    - eslint examples/**/*.js
+    - cat /dev/null | sbt test:compile
   post:
     - cat /dev/null | sbt test:test

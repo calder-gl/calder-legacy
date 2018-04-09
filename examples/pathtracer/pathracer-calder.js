@@ -3,14 +3,9 @@ import * as cgl from 'calder-gl';
 const canvas = document.getElementById('stage');
 const gl = canvas.getContext('webgl');
 
-const shaderPipeline = cgl.pipeline(
-  cgl.vertex `
-    attribute vec2 vertexPosition;
-
-    void main() {
-      gl_Position = vec4(vertexPosition, 0.0, 1.0);
-    }
-  `,
+// A pixel shader pipeline uses a standard vertex shader + vertex set to get the
+// pixel shader to run for every pixel on screen
+const shaderPipeline = cgl.pixelPipeline(
   cgl.fragment `
     uniform float time;
     uniform int frame;
@@ -131,7 +126,10 @@ const shaderPipeline = cgl.pipeline(
       vec3 cameraLocationStart = vec3(0, 0, 0);
       vec3 cameraLocationEnd = vec3(1, 3, 1);
       // Slide back and forth between camera locations
-      vec3 cameraLocation = mix(cameraLocationStart, cameraLocationEnd, sin(float(frame) / (CAMERA_CYCLE_LENGTH * FRAMES_PER_SECOND)));
+      vec3 cameraLocation = mix(
+        cameraLocationStart,
+        cameraLocationEnd,
+        sin(float(frame) / (CAMERA_CYCLE_LENGTH * FRAMES_PER_SECOND)));
       vec3 cameraTarget = vec3(0.0, 10.0, 0.0);
       vec3 cameraUp = vec3(0, 0, 1);
       float cameraDistance = 0.3;
@@ -212,6 +210,9 @@ const shaderPipeline = cgl.pipeline(
   framesPerSecond: cgl.float `60`,
 }).build(gl);
 
+// This value doesn't change, so buffer it once at the beginning
+shaderPipeline.resolution = [stage.width, stage.height];
+
 let frame = 0;
 const startTime = (new Date()).getTime();
 function draw() {
@@ -220,16 +221,12 @@ function draw() {
   shaderPipeline.clear();
   shaderPipeline.useProgram();
 
-  // The shaderPipeline should be able to handle flattening
-  shaderPipeline.vertexPosition = [
-    [-1, -1],
-    [1, -1],
-    [-1, 1],
-    [1, 1]];
   shaderPipeline.time = (new Date()).getTime() - startTime;
   shaderPipeline.frame = frame++;
-  shaderPipeline.resolution = [stage.width, stage.height];
-  shaderPipeline.draw(4); // is there a better way to get # vertices?
+
+  // Calder knows the size each item should be and the length of the buffer so we shouldn't need
+  // to specify number of vertices
+  shaderPipeline.draw();
 
   requestAnimationFrame(draw);
 }

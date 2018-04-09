@@ -136,7 +136,10 @@ void main() {
   vec3 cameraLocationEnd = vec3(1, 3, 1);
 
   // Slide back and forth between camera locations
-  vec3 cameraLocation = mix(cameraLocationStart, cameraLocationEnd, sin(float(frame) / (CAMERA_CYCLE_LENGTH * FRAMES_PER_SECOND)));
+  vec3 cameraLocation = mix(
+    cameraLocationStart,
+    cameraLocationEnd,
+    sin(float(frame) / (CAMERA_CYCLE_LENGTH * FRAMES_PER_SECOND)));
   vec3 cameraTarget = vec3(0.0, 10.0, 0.0);
   vec3 cameraUp = vec3(0, 0, 1);
   float cameraDistance = 0.3;
@@ -241,7 +244,7 @@ function draw() {
   gl.depthFunc(gl.LEQUAL);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   gl.useProgram(shaderProgram);
-  
+
   gl.bindBuffer(gl.ARRAY_BUFFER, position);
   gl.vertexAttribPointer(
     info.vertexPosition,
@@ -251,13 +254,13 @@ function draw() {
     0,
     0);
   gl.enableVertexAttribArray(info.vertexPosition);
-  
+
   gl.uniform1f(info.time, (new Date()).getTime() - startTime);
   gl.uniform1i(info.frame, frame++);
   gl.uniform2f(info.resolution, stage.width, stage.height);
-  
+
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-  
+
   requestAnimationFrame(draw);
 }
 
