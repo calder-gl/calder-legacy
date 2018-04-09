@@ -40,23 +40,9 @@ const geometryPass = cgl.pipeline(
     varying vec4 normal;
     varying vec4 position;
 
-    // Buffers have a format and properties that can be initialized in C struct
-    // format, or just left as sane defaults. (In WebGL 2, the format and internal
-    // format of a texture can be different, but in WebGL 1 they must be the same)
-    buffer rgba diffuseBuf {
-      .magFilter = NEAREST,
-      .minFilter = NEAREST,
-      .wrapS = CLAMP_TO_EDGE,
-      .wrapT = CLAMP_TO_EDGE
-    };
-    buffer rgba normalBuf;
-    buffer rgba positionBuf;
-
-    // One depth buffer can be declared, and is implicitly used when it is.
-    // This needs declaring because it is plausible that no depth buffer is needed
-    // for some applications, and declaring it means it is given a name so that
-    // other shaders can read its value in as a texture
-    buffer depth depthBuf;
+    buffer diffuseBuf;
+    buffer normalBuf;
+    buffer positionBuf;
 
     void main() {
       diffuseBuf = vec4(diffuse.xyz, 1.0);
@@ -70,6 +56,19 @@ const geometryPass = cgl.pipeline(
   width: cgl.dynamicInt(canvas.width),
   height: cgl.dynamicInt(canvas.height),
 }).build(gl);
+
+const diffuse = cgl.texture({
+  width: canvas.width,
+  height: canvas.height,
+  type: cgl.RGBA,
+  magFilter: cgl.NEAREST,
+  minFilter: cgl.NEAREST,
+  wrapS: cgl.CLAMP_TO_EDGE,
+  wrapT: cgl.CLAMP_TO_EDGE
+});
+const normal = cgl.texture({width: canvas.width, height: canvas.height});
+const position = cgl.texture({width: canvas.width, height: canvas.height});
+const depth = cgl.texture({type: depth, width: canvas.width, height: canvas.height});
 
 // Set up the geometry to render
 
@@ -144,6 +143,8 @@ const aoPass = cgl.pixelPipeline(
     uniform sampler2D depthBuf;
 
     uniform vec2 screenSize;
+
+    buffer ao;
 
     const int NUM_SAMPLES = 30;
     const int NUM_SPIRAL_TURNS = 7;
@@ -228,6 +229,68 @@ const aoPass = cgl.pixelPipeline(
       occlusion = 1.0 - occlusion / (4.0 * float(NUM_SAMPLES));
       occlusion = clamp(pow(occlusion, 1.0 + INTENSITY), 0.0, 1.0);
       
+      ao = vec4(occlusion, occlusion, occlusion, 1.0);
+    }
+  `
+).build(gl);
+
+const ao = cgl.texture({width: canvas.width, height: canvas.height});
+
+aoPass.screenSize = [canvas.width, canvas.height];
+
+const finalPass = cgl.pixelPipeline(
+  cgl.fragment `
+    precision highp float;
+
+    uniform sampler2D diffuseBuf;
+    uniform sampler2D normalBuf;
+    uniform sampler2D positionBuf;
+    uniform sampler2D aoBuf;
+    uniform sampler2D depthBuf;
+
+    uniform vec2 screenSize;
+
+    const float EDGE_SHARPNESS = 1.0;
+    const int SCALE = 2;
+
+    float blurAO(vec2 screenSpaceOrigin) {
+      float sum = texture2D(aoBuf, screenSpaceOrigin).x;
+      float originDepth = texture2D(depthBuf, screenSpaceOrigin).z;
+      float totalWeight = 1.0;
+      sum *= totalWeight;
+
+      for (int x = -4; x <= 4; x++) {
+        for (int y = -4; y <= 4; y++) {
+          if (x != 0 || y != 0) {
+            vec2 samplePosition = screenSpaceOrigin + vec2(float(x * SCALE), float(y * SCALE)) * vec2(1.0/screenSize.x, 1.0/screenSize.y);
+            float ao = texture2D(aoBuf, samplePosition).x;
+            float sampleDepth = texture2D(depthBuf, samplePosition).z;
+            int kx = 4 - (x < 0 ? -x : x);
+            int ky = 4 - (y < 0 ? -y : y);
+            float weight = 0.3 + (abs(float(x * y)) / (25.0 * 25.0));
+            weight *= max(0.0, 1.0 - (EDGE_SHARPNESS * 2000.0) * abs(sampleDepth - originDepth));
+
+            sum += ao * weight;
+            totalWeight += weight;
+          }
+        }
+      }
+
+      const float epsilon = 0.0001;
+      return sum / (totalWeight + epsilon);
+    }
+
+    void main() {
+      vec2 screenSpaceOrigin = gl_FragCoord.xy * vec2(1.0/screenSize.x, 1.0/screenSize.y);
+
+      vec3 worldSpaceOrigin = texture2D(positionBuf, screenSpaceOrigin).xyz;
+      vec3 normalAtOrigin = normalize(texture2D(normalBuf, screenSpaceOrigin).xyz);
+      vec3 colorAtOrigin = texture2D(diffuseBuf, screenSpaceOrigin).xyz;
+      vec3 aoAtOrigin = texture2D(aoBuf, screenSpaceOrigin).xyz;
+
+      // Blur AO
+      float occlusion = blurAO(screenSpaceOrigin);
+
       // Add specular highlights
       vec3 lightDir = normalize(vec3(150.0, 80.0, 50.0) - worldSpaceOrigin);
       vec3 viewDir = normalize(vec3(0.0, 0.0, 0.0) - worldSpaceOrigin);
@@ -239,12 +302,16 @@ const aoPass = cgl.pixelPipeline(
   `
 ).build(gl);
 
-finalPass.screenSize = [canvas.width, canvas.height];
-
 function draw() {
   // Render geometry pass
   geometryPass.clear();
   geometryPass.useProgram();
+  geometryPass.useFrameBuffer({
+    position,
+    normal,
+    diffuse,
+    depth // If specifying our own framebuffer, depth must be passed in
+  });
 
   mat4.rotate(teapotTransform, teapotTransform, 0.01, [0.0, 1, 0.0]);
   geometryPass.teapotTransform = teapotTransform;
@@ -267,16 +334,32 @@ function draw() {
   geometryPass.cleanup();
 
 
+  // Render ao pass
+
+  aoPass.clear();
+  aoPass.useProgram();
+  aoPass.useFrameBuffer({ ao });
+
+  // Buffers from a multi-buffer pipeline are externally readable textures
+  aoPass.diffuseBuf = diffuse;
+  aoPass.normalBuf = normal;
+  aoPass.positionBuf = position;
+  aoPass.depthBuf = depth;
+
+  aoPass.draw();
+  aoPass.cleanup();
+
   // Render final pass
 
   finalPass.clear();
   finalPass.useProgram();
 
   // Buffers from a multi-buffer pipeline are externally readable textures
-  finalPass.diffuseBuf = geometryPass.diffuseBuf;
-  finalPass.normalBuf = geometryPass.normalBuf;
-  finalPass.positionBuf = geometryPass.positionBuf;
-  finalPass.depthBuf = geometryPass.depthBuf;
+  finalPass.diffuseBuf = diffuse;
+  finalPass.normalBuf = normal;
+  finalPass.positionBuf = position;
+  finalPass.depthBuf = depth;
+  finalPass.aoBuf = ao;
 
   finalPass.draw();
   finalPass.cleanup();
